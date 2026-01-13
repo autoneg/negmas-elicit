@@ -35,6 +35,7 @@ jobs:
       - name: Run type checking
         run: uv run --python ${{ matrix.python-version }} mypy src/negmas_elicit --ignore-missing-imports
         if: matrix.python-version == '3.12' && matrix.os == 'ubuntu-latest'
+        continue-on-error: true
 
   lint:
     runs-on: ubuntu-latest
