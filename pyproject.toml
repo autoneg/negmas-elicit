@@ -1,6 +1,6 @@
 [project]
 name = "negmas-elicit"
-version = "0.1.0"
+version = "0.1.1"
 description = "Preference elicitation module for automated negotiation, extracted from the NegMAS library"
 readme = "README.md"
 license = "AGPL-3.0-or-later"

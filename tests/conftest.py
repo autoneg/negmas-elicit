@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Pytest configuration and fixtures for negmas-elicit tests."""
 
 from __future__ import annotations
