@@ -5,10 +5,9 @@ from __future__ import annotations
 import copy
 import time
 from abc import abstractmethod
-from typing import Callable
+from collections.abc import Callable
 
 import numpy as np
-
 from negmas.common import MechanismState, NegotiatorMechanismInterface, Value
 from negmas.helpers.prob import ScipyDistribution
 from negmas.models.acceptance import (
@@ -18,6 +17,7 @@ from negmas.models.acceptance import (
 from negmas.outcomes import Outcome
 from negmas.preferences import IPUtilityFunction, MappingUtilityFunction, Preferences
 from negmas.sao import AspirationNegotiator, ResponseType, SAONegotiator
+
 from negmas_elicit.common import _locs, _uppers
 from negmas_elicit.expectors import Expector, MeanExpector
 from negmas_elicit.strategy import EStrategy

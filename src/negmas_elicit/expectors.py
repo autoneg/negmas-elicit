@@ -8,7 +8,6 @@ from typing import Literal
 from negmas.common import MechanismState, NegotiatorMechanismInterface, Value
 from negmas.negotiators.helpers import PolyAspiration
 
-
 __all__ = [
     "Expector",
     "StaticExpector",

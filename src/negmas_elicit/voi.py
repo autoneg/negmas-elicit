@@ -3,20 +3,21 @@ Implements all Value-of-Information based elicitation methods.
 """
 
 from __future__ import annotations
+
 import copy
 import time
 from abc import abstractmethod
 from collections import defaultdict
+from collections.abc import Callable
 from heapq import heapify, heappop, heappush
-from typing import TYPE_CHECKING, Callable
+from typing import TYPE_CHECKING
 
 import numpy as np
-from sortedcontainers import SortedList
-
 from negmas.common import MechanismState, Value
 from negmas.models.acceptance import AdaptiveDiscreteAcceptanceModel
 from negmas.outcomes import Outcome
 from negmas.sao import AspirationNegotiator, SAONegotiator
+from sortedcontainers import SortedList
 
 from negmas_elicit.base import BaseElicitor
 from negmas_elicit.common import _scale, argmax

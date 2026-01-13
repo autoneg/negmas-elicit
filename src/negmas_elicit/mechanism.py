@@ -10,7 +10,6 @@ from typing import Any
 
 import numpy as np
 import pandas as pd
-
 from negmas import warnings
 from negmas.genius import GeniusNegotiator
 from negmas.helpers import create_loggers, instantiate
@@ -35,18 +34,18 @@ from negmas.sao import (
     ToughNegotiator,
 )
 
+from negmas_elicit.base import BaseElicitor
 from negmas_elicit.baseline import DummyElicitor, FullKnowledgeElicitor
 from negmas_elicit.expectors import (
     BalancedExpector,
     MaxExpector,
-    MinExpector,
     MeanExpector,
+    MinExpector,
 )
 from negmas_elicit.pandora import FullElicitor, RandomElicitor
-from negmas_elicit.user import User
-from negmas_elicit.base import BaseElicitor
-from negmas_elicit.strategy import EStrategy
 from negmas_elicit.queries import Answer, Query, RangeConstraint
+from negmas_elicit.strategy import EStrategy
+from negmas_elicit.user import User
 from negmas_elicit.voi import (
     VOIElicitor,
     VOIFastElicitor,

@@ -6,14 +6,15 @@ import copy
 import operator
 import pprint
 from abc import ABC, abstractmethod
+from collections.abc import Callable, Iterable, Sequence
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Callable, Iterable, Sequence
-
-from negmas.preferences.preferences import Preferences
+from typing import TYPE_CHECKING
 
 from negmas.common import NegotiatorMechanismInterface, Value
 from negmas.helpers.prob import ScipyDistribution
 from negmas.outcomes import Outcome
+from negmas.preferences.preferences import Preferences
+
 from negmas_elicit.common import _loc, _upper
 
 if TYPE_CHECKING:
@@ -431,8 +432,8 @@ class QResponse:
 
 def possible_queries(
     nmi: NegotiatorMechanismInterface,
-    strategy: "EStrategy",
-    user: "User",
+    strategy: EStrategy,
+    user: User,
     outcome: Outcome = None,
 ) -> list[tuple[Outcome, list[ScipyDistribution], float]]:
     """Gets all queries that could be asked for that outcome until an exact value of ufun is found.
@@ -487,7 +488,7 @@ def possible_queries(
 
 
 def next_query(
-    strategy: "EStrategy", user: "User", outcome: Outcome = None
+    strategy: EStrategy, user: User, outcome: Outcome = None
 ) -> list[tuple[Outcome, Query, float]]:
     """Gets the possible outcomes for the next ask with its cost.
 

@@ -2,10 +2,10 @@
 
 from __future__ import annotations
 
-from typing import Any, Iterable
+from collections.abc import Iterable
+from typing import Any
 
 import numpy as np
-
 from negmas.common import Value
 
 np.seterr(all="raise")  # setting numpy to raise exceptions in case of errors

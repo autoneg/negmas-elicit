@@ -6,10 +6,11 @@ from typing import TYPE_CHECKING
 
 from negmas.common import NegotiatorMechanismInterface, Value
 from negmas.helpers.prob import ScipyDistribution
-from negmas.preferences import IPUtilityFunction
 from negmas.outcomes import Outcome
+from negmas.preferences import IPUtilityFunction
+
 from negmas_elicit.common import _loc, _upper
-from negmas_elicit.queries import Answer, Query, RangeConstraint
+from negmas_elicit.queries import Answer, QResponse, Query, RangeConstraint
 
 if TYPE_CHECKING:
     from negmas_elicit.user import User
@@ -86,9 +87,7 @@ class EStrategy:
         if abs(upper - lower) < self.resolution:
             return None
 
-        if self.strategy is None:
-            return None
-        elif self.strategy == "exact":
+        if self.strategy is None or self.strategy == "exact":
             return None
         else:
             if self.strategy == "bisection":
@@ -230,8 +229,8 @@ class EStrategy:
         return query
 
     def apply(
-        self, user: "User", outcome: Outcome
-    ) -> tuple[Value | None, "QResponse | None"]:
+        self, user: User, outcome: Outcome
+    ) -> tuple[Value | None, QResponse | None]:
         """Do the elicitation and incur the cost.
 
         Remarks:
@@ -241,7 +240,6 @@ class EStrategy:
             - If it could find an exact value, it will return a `float` not a `Distribution`
 
         """
-        from negmas_elicit.queries import QResponse
 
         lower, upper, _ = self.lower, self.upper, self.outcomes
         index = self.indices[outcome]
@@ -287,7 +285,7 @@ class EStrategy:
             return self.lower[indx]
         return ScipyDistribution(type="uniform", loc=self.lower[indx], scale=scale)
 
-    def until(self, outcome: Outcome, user: "User", dist: list[Value] | Value) -> Value:
+    def until(self, outcome: Outcome, user: User, dist: list[Value] | Value) -> Value:
         """Until.
 
         Args:

@@ -8,6 +8,7 @@ from negmas.common import MechanismState, Value
 from negmas.helpers.prob import ScipyDistribution
 from negmas.outcomes import Outcome
 from negmas.preferences import IPUtilityFunction
+
 from negmas_elicit.base import BaseElicitor
 
 __all__ = ["DummyElicitor", "FullKnowledgeElicitor"]

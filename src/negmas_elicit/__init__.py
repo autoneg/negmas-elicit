@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """ "
 The interface to all negotiators capable of eliciting user preferences before
 , and during negotiations.
@@ -8,6 +7,8 @@ This module was extracted from the negmas library.
 
 from __future__ import annotations
 
+from negmas_elicit.base import BaseElicitor
+from negmas_elicit.baseline import DummyElicitor, FullKnowledgeElicitor
 from negmas_elicit.common import (
     _loc,
     _locs,
@@ -27,23 +28,7 @@ from negmas_elicit.expectors import (
     MinExpector,
     StaticExpector,
 )
-from negmas_elicit.user import ElicitationRecord, User
-from negmas_elicit.queries import (
-    Answer,
-    ComparisonConstraint,
-    Constraint,
-    CostEvaluator,
-    MarginalNeutralConstraint,
-    Query,
-    QResponse,
-    RangeConstraint,
-    RankConstraint,
-    next_query,
-    possible_queries,
-)
-from negmas_elicit.strategy import EStrategy
-from negmas_elicit.base import BaseElicitor
-from negmas_elicit.baseline import DummyElicitor, FullKnowledgeElicitor
+from negmas_elicit.mechanism import SAOElicitingMechanism
 from negmas_elicit.pandora import (
     AspiringElicitor,
     BalancedElicitor,
@@ -58,6 +43,21 @@ from negmas_elicit.pandora import (
     RandomElicitor,
     weitzman_index_uniform,
 )
+from negmas_elicit.queries import (
+    Answer,
+    ComparisonConstraint,
+    Constraint,
+    CostEvaluator,
+    MarginalNeutralConstraint,
+    QResponse,
+    Query,
+    RangeConstraint,
+    RankConstraint,
+    next_query,
+    possible_queries,
+)
+from negmas_elicit.strategy import EStrategy
+from negmas_elicit.user import ElicitationRecord, User
 from negmas_elicit.voi import (
     OQA,
     BaseVOIElicitor,
@@ -66,7 +66,6 @@ from negmas_elicit.voi import (
     VOINoUncertaintyElicitor,
     VOIOptimalElicitor,
 )
-from negmas_elicit.mechanism import SAOElicitingMechanism
 
 __all__ = (
     # common

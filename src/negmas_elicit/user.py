@@ -5,13 +5,12 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 import numpy as np
-
 from negmas import warnings
+from negmas.outcomes import Outcome
+from negmas.preferences import MappingUtilityFunction, UtilityFunction
 from negmas.preferences.preferences import Preferences
 from negmas.types.rational import Rational
 
-from negmas.outcomes import Outcome
-from negmas.preferences import MappingUtilityFunction, UtilityFunction
 from negmas_elicit.queries import Constraint, CostEvaluator, QResponse, Query
 
 np.seterr(all="raise")  # setting numpy to raise exceptions in case of errors

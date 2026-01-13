@@ -5,13 +5,13 @@ from __future__ import annotations
 import functools
 import random
 import time
+from collections.abc import Callable
 from heapq import heapify, heappop
 from math import sqrt
-from typing import TYPE_CHECKING, Callable
+from typing import TYPE_CHECKING
 
 import numpy as np
 import scipy.optimize as opt
-
 from negmas.common import MechanismState, Value
 from negmas.models.acceptance import AdaptiveDiscreteAcceptanceModel
 from negmas.negotiators.helpers import PolyAspiration
@@ -30,13 +30,13 @@ from negmas_elicit.expectors import (
 
 if TYPE_CHECKING:
     from negmas.common import NegotiatorMechanismInterface
+    from negmas.helpers.prob import Distribution
     from negmas.models.acceptance import DiscreteAcceptanceModel
     from negmas.preferences import IPUtilityFunction
-    from negmas.helpers.prob import Distribution
 
+    from negmas_elicit.expectors import Expector
     from negmas_elicit.strategy import EStrategy
     from negmas_elicit.user import User
-    from negmas_elicit.expectors import Expector
 
 __all__ = [
     "BasePandoraElicitor",
@@ -102,9 +102,7 @@ def weitzman_index_uniform(
         if abs(_ - loc) < 1e-5 or abs(_ - end) < 1e-3:
             return _
     print(
-        "No solutions are found for (l={}, s={}, c={}, time_discount={}) [{}, {}, {}]".format(
-            loc, scale, cost, time_discount, z, z1, z2
-        )
+        f"No solutions are found for (l={loc}, s={scale}, c={cost}, time_discount={time_discount}) [{z}, {z1}, {z2}]"
     )
     return 0.0
 
