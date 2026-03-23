@@ -28,7 +28,7 @@ classifiers = [
     "Typing :: Typed",
 ]
 dependencies = [
-    "negmas>=0.10.0",
+    "negmas>=0.15.2",
     "sortedcontainers>=2.4.0",
 ]
 
