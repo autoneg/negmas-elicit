@@ -235,8 +235,13 @@ class BaseVOIElicitor(BaseElicitor):
                 and nmi is not None
                 and nmi.outcomes is not None
             )
+            # NOTE: the per-query cost must be the real cost of asking, NOT 0.0.
+            # It is baked into the query's EEU (qeeu = cost - E[EEU_after]) and
+            # drives the ask/stop gate in `elicit_single`. With 0.0 the gate
+            # degenerates from "ask iff VOI > cost" to "ask iff VOI > 0",
+            # causing runaway over-elicitation.
             self.queries = [
-                (outcome, self.strategy.next_query(outcome), 0.0)
+                (outcome, self.strategy.next_query(outcome), self.user.cost_of_asking())
                 for outcome in nmi.outcomes
             ]
         else:
@@ -368,11 +373,15 @@ class BaseVOIElicitor(BaseElicitor):
         if not self.can_elicit():
             return False
         eeu, q = heappop(self.eeu_query)
+        # `-eeu` == E[EEU after asking] - this query's cost (cost is baked into
+        # qeeu). Gate 1: ask iff VOI > cost, i.e. (-eeu) > current EEU.
         if q is None or -eeu <= self.current_eeu:
             return False
+        # Gate 2 (reserved-value backstop): `-eeu` already accounts for this
+        # query's cost, so only the *accumulated* elicitation cost is subtracted
+        # here (subtracting cost_of_asking again would double-count).
         if (not self.continue_eliciting_past_reserved_val) and (
-            -eeu - (self.user.cost_of_asking() + self.elicitation_cost)
-            < self.reserved_value
+            -eeu - self.elicitation_cost < self.reserved_value
         ):
             return False
         outcome, query, cost = self.queries[q]
@@ -400,7 +409,13 @@ class BaseVOIElicitor(BaseElicitor):
             index=outcome_index, outcome=outcome, oldu=float(oldu), newu=eu
         )
         if self.dynamic_query_set:
-            o, q, c = outcome, self.strategy.next_query(outcome), 0.0
+            # real cost, not 0.0 (see note in init_elicitation) so the newly
+            # queued query's EEU carries its cost into the ask/stop gate.
+            o, q, c = (
+                outcome,
+                self.strategy.next_query(outcome),
+                self.user.cost_of_asking(),
+            )
             if not (o is None or q is None):
                 self.queries.append((o, q, c))
                 qeeu = self._query_eeu(
