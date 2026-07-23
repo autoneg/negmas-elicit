@@ -150,7 +150,8 @@ print(mech.elicitation_state["elicitor_utility"], mech.elicitation_state["n_quer
 | `elicitor_type` | Class | Notes |
 |-----------------|-------|-------|
 | `full_knowledge` | `FullKnowledgeElicitor` | Knows the true ufun — an upper baseline. |
-| `pandora`, `fast`, `mean`, `balanced`, `optimistic`, `pessimistic` | Pandora's-box family | Query when the expected gain beats the cost. |
+| `pandora` | `PandoraElicitor` | Baarslag & Gerding's Pandora's-box method (IJCAI 2015). |
+| `fast`, `mean`, `balanced`, `optimistic`, `pessimistic` | `FastElicitor`, `MeanElicitor`, ... | Mohammad & Nakadai's practical elicitation strategies (IEEE SMC 2018). |
 | `voi`, `voi_fast` | `VOIElicitor`, `VOIFastElicitor` | Value-of-information elicitation. |
 | `voi_optimal` | `VOIOptimalElicitor` | Optimal value-of-information elicitation. |
 

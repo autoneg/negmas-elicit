@@ -1,12 +1,29 @@
-"""Pandora's-box preference elicitation.
+"""Pandora's-box and practical preference elicitation.
 
-The elicitors in this module implement the optimal incremental preference
-elicitation algorithm of:
+This module contains two related families of elicitors:
 
-    Baarslag, T., & Gerding, E. H. (2015). Optimal incremental preference
-    elicitation during negotiation. In *Proceedings of the 24th International
-    Joint Conference on Artificial Intelligence (IJCAI'15)*, pp. 3--9.
-    https://www.ijcai.org/Proceedings/15/Papers/008.pdf
+- The **Pandora's-box** elicitors of Baarslag & Gerding (2015):
+
+      Baarslag, T., & Gerding, E. H. (2015). Optimal incremental preference
+      elicitation during negotiation. In *Proceedings of the 24th
+      International Joint Conference on Artificial Intelligence (IJCAI'15)*,
+      pp. 3--9. https://www.ijcai.org/Proceedings/15/Papers/008.pdf
+
+  implemented by `PandoraElicitor` and `OptimalIncrementalElicitor`.
+
+- The **practical elicitation strategies** of Mohammad & Nakadai (2018), which
+  extend the optimal elicitation algorithm to the case where queries reduce
+  (rather than remove) uncertainty in the utility function:
+
+      Mohammad, Y., & Nakadai, S. (2018). Utility elicitation during
+      negotiation with practical elicitation strategies. In *2018 IEEE
+      International Conference on Systems, Man, and Cybernetics (SMC)*,
+      pp. 3100--3107. https://doi.org/10.1109/SMC.2018.00525
+
+  implemented by `FastElicitor`, `MeanElicitor`, `BalancedElicitor`,
+  `AspiringElicitor`, `OptimisticElicitor`, and `PessimisticElicitor`
+  (`FullElicitor` and `RandomElicitor` are baselines built on the same
+  framework).
 """
 
 from __future__ import annotations
@@ -804,6 +821,18 @@ class PandoraElicitor(BasePandoraElicitor):
 class FastElicitor(PandoraElicitor):
     """
     Same as `PandoraElicitor` but does not use deep elicitation.
+
+    This is one of the practical elicitation strategies of Mohammad & Nakadai
+    (2018), which extend the optimal (Pandora's-box) elicitation of Baarslag &
+    Gerding (2015) to the case where queries reduce, rather than remove, the
+    uncertainty in the utility function.
+
+    References
+    ----------
+    .. [MohammadNakadai2018] Mohammad, Y., & Nakadai, S. (2018). Utility
+       elicitation during negotiation with practical elicitation strategies.
+       In *2018 IEEE International Conference on Systems, Man, and Cybernetics
+       (SMC)*, 3100--3107. https://doi.org/10.1109/SMC.2018.00525
     """
 
     def __init__(self, *args, **kwargs):
@@ -839,6 +868,18 @@ class OptimalIncrementalElicitor(FastElicitor):
     Same as `FastElicitor` but uses incremental elicitation which simply
     means that it only updates the index for outcomes that are affected
     by changes in the opponent model.
+
+    This is the optimal incremental elicitation method of Baarslag & Gerding
+    (2015) (the "optimal" variant of the Pandora's-box approach), built here
+    on top of the practical `FastElicitor`.
+
+    References
+    ----------
+    .. [BaarslagGerding2015] Baarslag, T., & Gerding, E. H. (2015). Optimal
+       incremental preference elicitation during negotiation. In
+       *Proceedings of the 24th International Conference on Artificial
+       Intelligence (IJCAI'15)*, 3--9. AAAI Press.
+       https://www.ijcai.org/Proceedings/15/Papers/008.pdf
     """
 
     def __init__(self, strategy: EStrategy, user: User, **kwargs) -> None:

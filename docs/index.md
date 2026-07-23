@@ -13,10 +13,11 @@ value-of-information based elicitation:
 
 | Family | Algorithm | Reference |
 |--------|-----------|-----------|
-| Pandora's Box | `PandoraElicitor`, `OptimalIncrementalElicitor`, ... | [Baarslag & Gerding, *IJCAI 2015*](https://www.ijcai.org/Proceedings/15/Papers/008.pdf) |
-| Value of Information | `VOIElicitor` (OQA) | Baarslag & Kaisers, *AAMAS 2017* |
-| Fast VOI | `VOIFastElicitor` | Mohammad & Nakadai, *PRIMA 2018* |
-| Optimal VOI | `VOIOptimalElicitor` | Mohammad & Nakadai, *AAMAS 2019* |
+| Pandora's Box | `PandoraElicitor`, `OptimalIncrementalElicitor` | [Baarslag & Gerding, *IJCAI 2015*](https://www.ijcai.org/Proceedings/15/Papers/008.pdf) |
+| Practical strategies | `FastElicitor`, `MeanElicitor`, `BalancedElicitor`, `AspiringElicitor`, `OptimisticElicitor`, `PessimisticElicitor` | [Mohammad & Nakadai, *IEEE SMC 2018*](https://doi.org/10.1109/SMC.2018.00525) |
+| Value of Information | `VOIElicitor` (OQA) | [Baarslag & Kaisers, *AAMAS 2017*](https://ifaamas.org/Proceedings/aamas2017/pdfs/p391.pdf) |
+| Fast VOI | `VOIFastElicitor` | [Mohammad & Nakadai, *PRIMA 2018*](https://link.springer.com/chapter/10.1007/978-3-030-03098-8_42) |
+| Optimal VOI | `VOIOptimalElicitor` | [Mohammad & Nakadai, *AAMAS 2019*](https://www.ifaamas.org/Proceedings/aamas2019/pdfs/p242.pdf) |
 
 ## Features
 

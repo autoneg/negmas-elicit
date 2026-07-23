@@ -13,7 +13,7 @@ negmas-elicit/
 │   ├── expectors.py           # Expector implementations (mean/max/min/balanced/aspiring)
 │   ├── base.py                # BaseElicitor: the elicitor abstract base class
 │   ├── baseline.py            # DummyElicitor, FullKnowledgeElicitor (baselines)
-│   ├── pandora.py             # Pandora's-box elicitors (Baarslag & Gerding 2015)
+│   ├── pandora.py             # Pandora's-box (Baarslag & Gerding 2015) + practical strategies (Mohammad & Nakadai 2018)
 │   ├── voi.py                 # value-of-information elicitors (2017/2018/2019)
 │   ├── mechanism.py           # SAOElicitingMechanism (the end-to-end negotiation)
 │   └── cli.py                 # the `negmas-elicit` command-line interface
