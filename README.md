@@ -88,21 +88,21 @@ negmas-elicit evaluate --repetitions 20 --n-outcomes 10 --n-steps 100 \
 i.e. 10 outcomes, a per-query cost of 0.02, prior utility uncertainty of 0.2,
 full conflict (`conflict=1.0`), and a `limited_outcomes` opponent.
 
-| elicitor | utility (mean±std) | welfare | elic. cost | n_queries | pareto dist | steps | time (s) |
-|----------|:--:|:--:|:--:|:--:|:--:|:--:|:--:|
-| **full_knowledge** | **0.790 ± 0.158** | 1.399 | 0.000 | 0.0 | 0.178 | 2.85 | 0.0002 |
-| voi_optimal | 0.776 ± 0.186 | 1.422 | 0.000 | 0.0 | 0.136 | 2.85 | 0.0003 |
-| dummy | 0.776 ± 0.186 | 1.422 | 0.000 | 0.0 | 0.136 | 2.85 | 0.0026 |
-| voi | 0.738 ± 0.196 | 1.346 | 0.018 | 0.9 | 0.195 | 3.0 | 0.0162 |
-| pandora | 0.708 ± 0.162 | 1.322 | 0.044 | 2.2 | 0.252 | 2.8 | 0.0004 |
-| fast | 0.708 ± 0.162 | 1.322 | 0.044 | 2.2 | 0.252 | 2.8 | 0.0004 |
-| mean | 0.708 ± 0.162 | 1.322 | 0.044 | 2.2 | 0.252 | 2.8 | 0.0004 |
-| balanced | 0.708 ± 0.162 | 1.322 | 0.044 | 2.2 | 0.252 | 2.8 | 0.0004 |
-| optimistic | 0.708 ± 0.162 | 1.322 | 0.044 | 2.2 | 0.252 | 2.8 | 0.0004 |
-| pessimistic | 0.708 ± 0.162 | 1.322 | 0.044 | 2.2 | 0.252 | 2.8 | 0.0005 |
-| voi_fast | 0.675 ± 0.233 | 1.319 | 0.070 | 3.5 | 0.184 | 2.75 | 0.0154 |
-| random | 0.626 ± 0.205 | 1.202 | 0.081 | 4.1 | 0.270 | 3.0 | 0.0008 |
-| full | 0.463 ± 0.186 | 1.109 | 0.313 | 15.7 | 0.232 | 2.85 | 0.0027 |
+| elicitor | method | utility (mean±std) | welfare | elic. cost | n_queries | pareto dist | steps | time (s) |
+|----------|:--:|:--:|:--:|:--:|:--:|:--:|:--:|:--:|
+| **full_knowledge** | baseline | **0.790 ± 0.158** | 1.399 | 0.000 | 0.0 | 0.178 | 2.85 | 0.0002 |
+| voi_optimal | VOI | 0.776 ± 0.186 | 1.422 | 0.000 | 0.0 | 0.136 | 2.85 | 0.0003 |
+| dummy | baseline | 0.776 ± 0.186 | 1.422 | 0.000 | 0.0 | 0.136 | 2.85 | 0.0026 |
+| voi | VOI | 0.738 ± 0.196 | 1.346 | 0.018 | 0.9 | 0.195 | 3.0 | 0.0162 |
+| pandora | Pandora | 0.708 ± 0.162 | 1.322 | 0.044 | 2.2 | 0.252 | 2.8 | 0.0004 |
+| fast | Pandora | 0.708 ± 0.162 | 1.322 | 0.044 | 2.2 | 0.252 | 2.8 | 0.0004 |
+| mean | Pandora | 0.708 ± 0.162 | 1.322 | 0.044 | 2.2 | 0.252 | 2.8 | 0.0004 |
+| balanced | Pandora | 0.708 ± 0.162 | 1.322 | 0.044 | 2.2 | 0.252 | 2.8 | 0.0004 |
+| optimistic | Pandora | 0.708 ± 0.162 | 1.322 | 0.044 | 2.2 | 0.252 | 2.8 | 0.0004 |
+| pessimistic | Pandora | 0.708 ± 0.162 | 1.322 | 0.044 | 2.2 | 0.252 | 2.8 | 0.0005 |
+| voi_fast | VOI | 0.675 ± 0.233 | 1.319 | 0.070 | 3.5 | 0.184 | 2.75 | 0.0154 |
+| random | Pandora | 0.626 ± 0.205 | 1.202 | 0.081 | 4.1 | 0.270 | 3.0 | 0.0008 |
+| full | Pandora | 0.463 ± 0.186 | 1.109 | 0.313 | 15.7 | 0.232 | 2.85 | 0.0027 |
 
 A few things to note:
 
@@ -124,24 +124,30 @@ A few things to note:
 
 ## Available Elicitors
 
+Each elicitor is tagged with its method family — **Pandora** (Pandora's-box,
+Baarslag & Gerding, [IJCAI 2015](https://www.ijcai.org/Proceedings/15/Papers/008.pdf))
+or **VOI** (Value of Information, Baarslag & Kaisers,
+[AAMAS 2017](https://ifaamas.org/Proceedings/aamas2017/pdfs/p391.pdf)) — and the
+paper that introduced it where applicable.
+
 ### Baseline Elicitors
 - `DummyElicitor`: No elicitation, uses prior beliefs
 - `FullKnowledgeElicitor`: Assumes complete knowledge of user preferences
 
-### Pandora Elicitors
-- `PandoraElicitor`: Standard Pandora's box approach
-- `OptimalIncrementalElicitor`: Optimal incremental elicitation
-- `FastElicitor`: Fast approximation (no deep elicitation)
-- `FullElicitor`: Elicits every outcome up front, then offers
-- `RandomElicitor`: Uses a random index instead of the optimal z-index
-- `MeanElicitor`, `BalancedElicitor`, `AspiringElicitor`: Different expectation strategies
-- `OptimisticElicitor`, `PessimisticElicitor`: Optimistic/pessimistic strategies
+### Pandora Elicitors — Pandora's-box methods (Baarslag & Gerding, IJCAI 2015)
+- `PandoraElicitor` — **Pandora**: standard Pandora's box approach
+- `OptimalIncrementalElicitor` — **Pandora**: optimal incremental elicitation
+- `FastElicitor` — **Pandora**: fast approximation (no deep elicitation)
+- `FullElicitor` — **Pandora**: elicits every outcome up front, then offers
+- `RandomElicitor` — **Pandora**: random index instead of the optimal z-index
+- `MeanElicitor`, `BalancedElicitor`, `AspiringElicitor` — **Pandora**: different expectation strategies
+- `OptimisticElicitor`, `PessimisticElicitor` — **Pandora**: optimistic/pessimistic strategies
 
-### VOI Elicitors
-- `VOIElicitor`: Value of Information based elicitation (OQA)
-- `VOIFastElicitor`: Fast VOI approximation
-- `VOIOptimalElicitor`: Optimal VOI strategy
-- `VOINoUncertaintyElicitor`: VOI without uncertainty modeling
+### VOI Elicitors — Value-of-Information methods
+- `VOIElicitor` — **VOI** (OQA; Baarslag & Kaisers, AAMAS 2017)
+- `VOIFastElicitor` — **VOI** (FastVOI; Mohammad & Nakadai, PRIMA 2018)
+- `VOIOptimalElicitor` — **VOI** (Optimal VOI; Mohammad & Nakadai, AAMAS 2019)
+- `VOINoUncertaintyElicitor` — **VOI**: VOI without uncertainty modeling
 
 ## References
 
