@@ -74,6 +74,50 @@ negmas-elicit run --elicitor voi --n-outcomes 10     # a single session
 negmas-elicit evaluate --repetitions 20 --out out.csv  # compare all elicitors
 ```
 
+## Sample results
+
+The table below is the output of a full tournament sweeping every elicitor
+over 20 repetitions (260 sessions, no failures). It was produced with:
+
+```bash
+negmas-elicit evaluate --repetitions 20 --n-outcomes 10 --n-steps 100 \
+    --cost 0.02 --uncertainty 0.2 --conflict 1.0 --opponent limited_outcomes \
+    --out out.csv --raw out_raw.csv
+```
+
+i.e. 10 outcomes, a per-query cost of 0.02, prior utility uncertainty of 0.2,
+full conflict (`conflict=1.0`), and a `limited_outcomes` opponent.
+
+| elicitor | utility (mean±std) | welfare | elic. cost | n_queries | pareto dist | steps | time (s) |
+|----------|:--:|:--:|:--:|:--:|:--:|:--:|:--:|
+| **pandora** | **0.932 ± 0.060** | 1.504 | 0.058 | 2.9 | **0.049** | 4.0 | 0.0008 |
+| fast | 0.932 ± 0.060 | 1.504 | 0.058 | 2.9 | 0.049 | 4.0 | 0.0007 |
+| mean | 0.932 ± 0.060 | 1.504 | 0.058 | 2.9 | 0.049 | 4.0 | 0.0007 |
+| balanced | 0.932 ± 0.060 | 1.504 | 0.058 | 2.9 | 0.049 | 4.0 | 0.0008 |
+| optimistic | 0.932 ± 0.060 | 1.504 | 0.058 | 2.9 | 0.049 | 4.0 | 0.0008 |
+| pessimistic | 0.932 ± 0.060 | 1.504 | 0.058 | 2.9 | 0.049 | 4.0 | 0.0008 |
+| full_knowledge | 0.790 ± 0.158 | 1.399 | 0.000 | 0.0 | 0.178 | 2.85 | 0.0001 |
+| voi_optimal | 0.776 ± 0.186 | 1.422 | 0.000 | 0.0 | 0.136 | 2.85 | 0.0003 |
+| dummy | 0.776 ± 0.186 | 1.422 | 0.000 | 0.0 | 0.136 | 2.85 | 0.0025 |
+| voi | 0.738 ± 0.196 | 1.346 | 0.018 | 0.9 | 0.195 | 3.0 | 0.017 |
+| voi_fast | 0.675 ± 0.233 | 1.319 | 0.070 | 3.5 | 0.184 | 2.75 | 0.016 |
+| random | 0.626 ± 0.205 | 1.202 | 0.081 | 4.1 | 0.270 | 3.0 | 0.0008 |
+| full | 0.463 ± 0.186 | 1.109 | 0.313 | 15.7 | 0.232 | 2.85 | 0.0028 |
+
+A few things to note:
+
+- The **Pandora family** (`pandora`, `fast`, `mean`, `balanced`, `optimistic`,
+  `pessimistic`) achieves the highest utility (0.932) and the smallest Pareto
+  distance (0.049) with very few queries (~2.9). At 10 outcomes the different
+  expectors pick the same outcome to elicit and offer, so they coincide.
+- **`voi_optimal`** asks zero queries at `cost=0.02`: its expected value of
+  information never clears the elicitation cost, so it declines to elicit and
+  ties `dummy`. **`voi`** asks ~0.9 queries on average.
+- **`full`** elicits every outcome (15.7 queries, highest cost 0.313), and the
+  cost dominates — it ends with the lowest utility (0.463).
+- **`full_knowledge`** is the no-query oracle baseline; it has the lowest
+  per-session runtime but is not the top performer at these settings.
+
 ## Available Elicitors
 
 ### Baseline Elicitors
