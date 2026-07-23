@@ -1,10 +1,10 @@
 site_name: negmas-elicit
 site_description: Preference elicitation module for automated negotiation
 site_author: Yasser Mohammad
-site_url: https://yasserfarouk.github.io/negmas-elicit
+site_url: https://autoneg.github.io/negmas-elicit
 
-repo_name: yasserfarouk/negmas-elicit
-repo_url: https://github.com/yasserfarouk/negmas-elicit
+repo_name: autoneg/negmas-elicit
+repo_url: https://github.com/autoneg/negmas-elicit
 
 theme:
   name: material
@@ -64,4 +64,4 @@ nav:
 extra:
   social:
     - icon: fontawesome/brands/github
-      link: https://github.com/yasserfarouk/negmas-elicit
+      link: https://github.com/autoneg/negmas-elicit

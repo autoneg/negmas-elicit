@@ -1,8 +1,8 @@
 # negmas-elicit
 
 [![PyPI version](https://badge.fury.io/py/negmas-elicit.svg)](https://badge.fury.io/py/negmas-elicit)
-[![Tests](https://github.com/yasserfarouk/negmas-elicit/actions/workflows/test.yml/badge.svg)](https://github.com/yasserfarouk/negmas-elicit/actions/workflows/test.yml)
-[![Documentation](https://github.com/yasserfarouk/negmas-elicit/actions/workflows/docs.yml/badge.svg)](https://yasserfarouk.github.io/negmas-elicit/)
+[![Tests](https://github.com/autoneg/negmas-elicit/actions/workflows/test.yml/badge.svg)](https://github.com/autoneg/negmas-elicit/actions/workflows/test.yml)
+[![Documentation](https://github.com/autoneg/negmas-elicit/actions/workflows/docs.yml/badge.svg)](https://autoneg.github.io/negmas-elicit/)
 [![License: AGPL v3](https://img.shields.io/badge/License-AGPL_v3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
 [![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
 
@@ -27,7 +27,7 @@ pip install negmas-elicit
 ### From Source
 
 ```bash
-git clone https://github.com/yasserfarouk/negmas-elicit.git
+git clone https://github.com/autoneg/negmas-elicit.git
 cd negmas-elicit
 pip install -e .
 ```
@@ -59,7 +59,7 @@ print("elicitation cost:", round(s["elicitation_cost"], 3))
 print("queries asked:", s["n_queries"])
 ```
 
-See the [documentation](https://yasserfarouk.github.io/negmas-elicit/) for a
+See the [documentation](https://autoneg.github.io/negmas-elicit/) for a
 guided tour, a manual `User` + `EStrategy` + elicitor example, and the full API.
 
 ## Command-line evaluations
@@ -197,7 +197,7 @@ The elicitation algorithms implemented in this library are based on the followin
 
 ## Documentation
 
-Full documentation is available at [https://yasserfarouk.github.io/negmas-elicit/](https://yasserfarouk.github.io/negmas-elicit/)
+Full documentation is available at [https://autoneg.github.io/negmas-elicit/](https://autoneg.github.io/negmas-elicit/)
 
 ## Requirements
 

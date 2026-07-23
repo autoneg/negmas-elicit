@@ -36,10 +36,10 @@ dependencies = [
 negmas-elicit = "negmas_elicit.cli:main"
 
 [project.urls]
-Homepage = "https://github.com/yasserfarouk/negmas-elicit"
-Documentation = "https://yasserfarouk.github.io/negmas-elicit"
-Repository = "https://github.com/yasserfarouk/negmas-elicit"
-Issues = "https://github.com/yasserfarouk/negmas-elicit/issues"
+Homepage = "https://github.com/autoneg/negmas-elicit"
+Documentation = "https://autoneg.github.io/negmas-elicit"
+Repository = "https://github.com/autoneg/negmas-elicit"
+Issues = "https://github.com/autoneg/negmas-elicit/issues"
 
 [build-system]
 requires = ["hatchling"]

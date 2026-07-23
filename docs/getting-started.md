@@ -11,7 +11,7 @@ pip install negmas-elicit
 ### From source (development)
 
 ```bash
-git clone https://github.com/yasserfarouk/negmas-elicit.git
+git clone https://github.com/autoneg/negmas-elicit.git
 cd negmas-elicit
 pip install -e ".[dev,docs]"     # or: uv sync --all-extras
 ```
