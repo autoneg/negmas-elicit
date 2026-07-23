@@ -56,7 +56,7 @@ standard deviation of each metric. With no `--elicitors` it compares them all.
 
 ```bash
 negmas-elicit evaluate \
-    --elicitors dummy full_knowledge pandora voi voi_optimal \
+    --elicitors full_knowledge pandora voi voi_optimal \
     --repetitions 20 --n-outcomes 10 --cost 0.02 --uncertainty 0.4 --seed 0
 ```
 
@@ -65,7 +65,6 @@ Elicitation evaluation (n_outcomes=10, cost=0.02, uncertainty=0.4, conflict=1.0,
 
                elicitor_utility     welfare      elicitation_cost   n_queries    pareto_distance   agreed  steps   total_time
                        mean    std   mean    std       mean   std     mean   std      mean    std    mean   mean         mean
-dummy                0.8130 0.1873 1.4208 0.4376      0.000 0.000     0.00  0.00    0.1767 0.2455     1.0   2.80       0.0024
 full_knowledge       0.7897 0.1580 1.3991 0.4172      0.000 0.000     0.00  0.00    0.1783 0.2457     1.0   2.85       0.0002
 pandora              0.8698 0.0893 1.3845 0.4033      0.072 0.030     3.60  1.50    0.0943 0.2279     1.0   3.45       0.0008
 voi                  0.6791 0.2320 1.3288 0.3802      0.045 0.058     2.25  2.90    0.2093 0.2583     1.0   3.05       0.0449

@@ -149,7 +149,6 @@ print(mech.elicitation_state["elicitor_utility"], mech.elicitation_state["n_quer
 
 | `elicitor_type` | Class | Notes |
 |-----------------|-------|-------|
-| `dummy` | `DummyElicitor` | Never queries — a lower baseline. |
 | `full_knowledge` | `FullKnowledgeElicitor` | Knows the true ufun — an upper baseline. |
 | `pandora`, `fast`, `mean`, `balanced`, `optimistic`, `pessimistic` | Pandora's-box family | Query when the expected gain beats the cost. |
 | `voi`, `voi_fast` | `VOIElicitor`, `VOIFastElicitor` | Value-of-information elicitation. |

@@ -28,7 +28,6 @@ from negmas_elicit.mechanism import SAOElicitingMechanism
 
 #: The elicitor types understood by ``SAOElicitingMechanism(elicitor_type=...)``.
 ELICITOR_TYPES: tuple[str, ...] = (
-    "dummy",
     "full_knowledge",
     "full",
     "random",

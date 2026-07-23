@@ -77,7 +77,7 @@ negmas-elicit evaluate --repetitions 20 --out out.csv  # compare all elicitors
 ## Sample results
 
 The table below is the output of a full tournament sweeping every elicitor
-over 20 repetitions (260 sessions, no failures). It was produced with:
+over 20 repetitions (240 sessions, no failures). It was produced with:
 
 ```bash
 negmas-elicit evaluate --repetitions 20 --n-outcomes 10 --n-steps 100 \
@@ -86,23 +86,25 @@ negmas-elicit evaluate --repetitions 20 --n-outcomes 10 --n-steps 100 \
 ```
 
 i.e. 10 outcomes, a per-query cost of 0.02, prior utility uncertainty of 0.2,
-full conflict (`conflict=1.0`), and a `limited_outcomes` opponent.
+full conflict (`conflict=1.0`), and a `limited_outcomes` opponent. `method` is
+the elicitor's family — **Pandora** (Pandora's-box, Baarslag & Gerding 2015)
+or **VOI** (Value of Information, Baarslag & Kaisers 2017 / Mohammad & Nakadai
+2018–2019); `baseline` is the no-elicitation oracle.
 
-| elicitor | method | utility (mean±std) | welfare | elic. cost | n_queries | pareto dist | steps | time (s) |
+| method | variant | utility (mean±std) | welfare | elic. cost | n_queries | pareto dist | steps | time (s) |
 |----------|:--:|:--:|:--:|:--:|:--:|:--:|:--:|:--:|
-| **full_knowledge** | baseline | **0.790 ± 0.158** | 1.399 | 0.000 | 0.0 | 0.178 | 2.85 | 0.0002 |
-| voi_optimal | VOI | 0.776 ± 0.186 | 1.422 | 0.000 | 0.0 | 0.136 | 2.85 | 0.0003 |
-| dummy | baseline | 0.776 ± 0.186 | 1.422 | 0.000 | 0.0 | 0.136 | 2.85 | 0.0026 |
-| voi | VOI | 0.738 ± 0.196 | 1.346 | 0.018 | 0.9 | 0.195 | 3.0 | 0.0162 |
-| pandora | Pandora | 0.708 ± 0.162 | 1.322 | 0.044 | 2.2 | 0.252 | 2.8 | 0.0004 |
-| fast | Pandora | 0.708 ± 0.162 | 1.322 | 0.044 | 2.2 | 0.252 | 2.8 | 0.0004 |
-| mean | Pandora | 0.708 ± 0.162 | 1.322 | 0.044 | 2.2 | 0.252 | 2.8 | 0.0004 |
-| balanced | Pandora | 0.708 ± 0.162 | 1.322 | 0.044 | 2.2 | 0.252 | 2.8 | 0.0004 |
-| optimistic | Pandora | 0.708 ± 0.162 | 1.322 | 0.044 | 2.2 | 0.252 | 2.8 | 0.0004 |
-| pessimistic | Pandora | 0.708 ± 0.162 | 1.322 | 0.044 | 2.2 | 0.252 | 2.8 | 0.0005 |
-| voi_fast | VOI | 0.675 ± 0.233 | 1.319 | 0.070 | 3.5 | 0.184 | 2.75 | 0.0154 |
-| random | Pandora | 0.626 ± 0.205 | 1.202 | 0.081 | 4.1 | 0.270 | 3.0 | 0.0008 |
-| full | Pandora | 0.463 ± 0.186 | 1.109 | 0.313 | 15.7 | 0.232 | 2.85 | 0.0027 |
+| baseline | **full_knowledge** | **0.790 ± 0.158** | 1.399 | 0.000 | 0.0 | 0.178 | 2.85 | 0.0002 |
+| VOI | voi_optimal | 0.776 ± 0.186 | 1.422 | 0.000 | 0.0 | 0.136 | 2.85 | 0.0003 |
+| VOI | voi | 0.738 ± 0.196 | 1.346 | 0.018 | 0.9 | 0.195 | 3.0 | 0.0162 |
+| Pandora | pandora | 0.708 ± 0.162 | 1.322 | 0.044 | 2.2 | 0.252 | 2.8 | 0.0004 |
+| Pandora | fast | 0.708 ± 0.162 | 1.322 | 0.044 | 2.2 | 0.252 | 2.8 | 0.0004 |
+| Pandora | mean | 0.708 ± 0.162 | 1.322 | 0.044 | 2.2 | 0.252 | 2.8 | 0.0004 |
+| Pandora | balanced | 0.708 ± 0.162 | 1.322 | 0.044 | 2.2 | 0.252 | 2.8 | 0.0004 |
+| Pandora | optimistic | 0.708 ± 0.162 | 1.322 | 0.044 | 2.2 | 0.252 | 2.8 | 0.0004 |
+| Pandora | pessimistic | 0.708 ± 0.162 | 1.322 | 0.044 | 2.2 | 0.252 | 2.8 | 0.0005 |
+| VOI | voi_fast | 0.675 ± 0.233 | 1.319 | 0.070 | 3.5 | 0.184 | 2.75 | 0.0154 |
+| Pandora | random | 0.626 ± 0.205 | 1.202 | 0.081 | 4.1 | 0.270 | 3.0 | 0.0008 |
+| Pandora | full | 0.463 ± 0.186 | 1.109 | 0.313 | 15.7 | 0.232 | 2.85 | 0.0027 |
 
 A few things to note:
 
@@ -110,9 +112,9 @@ A few things to note:
   be: it knows the true utility and pays no elicitation cost, so it bounds
   everyone from above. (It underperforming elicitors would indicate a
   configuration bug; here it correctly leads.)
-- **`voi_optimal`** ties `dummy`: at `cost=0.02` its expected value of
-  information never clears the cost, so it declines to elicit and behaves like
-  the no-elicitation baseline. **`voi`** asks ~0.9 queries on average.
+- **`voi_optimal`** declines to elicit at `cost=0.02`: its expected value of
+  information never clears the cost, so it asks zero queries. **`voi`** asks
+  ~0.9 queries on average.
 - The **Pandora family** (`pandora`, `fast`, `mean`, `balanced`, `optimistic`,
   `pessimistic`) all coincide (same outcome to elicit/offer at 10 outcomes).
   They elicit ~2.2 queries but land below the no-query baselines here: with the
@@ -131,8 +133,8 @@ or **VOI** (Value of Information, Baarslag & Kaisers,
 paper that introduced it where applicable.
 
 ### Baseline Elicitors
-- `DummyElicitor`: No elicitation, uses prior beliefs
-- `FullKnowledgeElicitor`: Assumes complete knowledge of user preferences
+- `FullKnowledgeElicitor`: Assumes complete knowledge of user preferences (the
+  no-elicitation upper bound used in the tournaments)
 
 ### Pandora Elicitors — Pandora's-box methods (Baarslag & Gerding, IJCAI 2015)
 - `PandoraElicitor` — **Pandora**: standard Pandora's box approach

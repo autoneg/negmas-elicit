@@ -40,7 +40,7 @@ def test_evaluate_command_writes_csv(tmp_path, capsys):
         [
             "evaluate",
             "--elicitors",
-            "dummy",
+            "pandora",
             "full_knowledge",
             "voi",
             "--repetitions",
