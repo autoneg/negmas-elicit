@@ -94,18 +94,18 @@ elicitation-strategy variants), **VOI** (Value of Information), and `baseline`
 
 | method                  |      variant       | utility (mean±std) | welfare | elic. cost | n_queries | pareto dist | steps | time (s) |
 | ----------------------- | :----------------: | :----------------: | :-----: | :--------: | :-------: | :---------: | :---: | :------: |
-| baseline                | **full_knowledge** | **0.790 ± 0.158**  |  1.399  |   0.000    |    0.0    |    0.178    | 2.85  |  0.0002  |
-| VOI                     |    voi_optimal     |   0.776 ± 0.186    |  1.422  |   0.000    |    0.0    |    0.136    | 2.85  |  0.0003  |
-| VOI                     |        voi         |   0.738 ± 0.196    |  1.346  |   0.018    |    0.9    |    0.195    |  3.0  |  0.0162  |
-| Pandora's-box           |      original      |   0.708 ± 0.162    |  1.322  |   0.044    |    2.2    |    0.252    |  2.8  |  0.0004  |
-| Practical Pandora's-box |        fast        |   0.708 ± 0.162    |  1.322  |   0.044    |    2.2    |    0.252    |  2.8  |  0.0004  |
-| Practical Pandora's-box |        mean        |   0.708 ± 0.162    |  1.322  |   0.044    |    2.2    |    0.252    |  2.8  |  0.0004  |
-| Practical Pandora's-box |      balanced      |   0.708 ± 0.162    |  1.322  |   0.044    |    2.2    |    0.252    |  2.8  |  0.0004  |
-| Practical Pandora's-box |     optimistic     |   0.708 ± 0.162    |  1.322  |   0.044    |    2.2    |    0.252    |  2.8  |  0.0004  |
-| Practical Pandora's-box |    pessimistic     |   0.708 ± 0.162    |  1.322  |   0.044    |    2.2    |    0.252    |  2.8  |  0.0005  |
-| VOI                     |      voi_fast      |   0.675 ± 0.233    |  1.319  |   0.070    |    3.5    |    0.184    | 2.75  |  0.0154  |
-| Baseline                |       random       |   0.626 ± 0.205    |  1.202  |   0.081    |    4.1    |    0.270    |  3.0  |  0.0008  |
-| Baseline                |        full        |   0.463 ± 0.186    |  1.109  |   0.313    |   15.7    |    0.232    | 2.85  |  0.0027  |
+| baseline                | **full_knowledge** | **0.790 ± 0.158**  |  1.399  |   0.000    |    0.0    |    0.178    |  2.85 |  0.0002  |
+| VOI                     |        voi         |   0.776 ± 0.186    |  1.422  |   0.000    |    0.0    |    0.136    |  2.85 |  0.0004  |
+| VOI                     |      voi_fast      |   0.776 ± 0.186    |  1.422  |   0.000    |    0.0    |    0.136    |  2.85 |  0.0004  |
+| VOI                     |    voi_optimal     |   0.776 ± 0.186    |  1.422  |   0.000    |    0.0    |    0.136    |  2.85 |  0.0003  |
+| Practical Pandora's-box |    pessimistic     |   0.711 ± 0.166    |  1.258  |   0.046    |    2.3    |    0.262    |  2.85 |  0.0004  |
+| Practical Pandora's-box |        fast        |   0.684 ± 0.162    |  1.237  |   0.045    |    2.2    |    0.345    |  2.80 |  0.0005  |
+| Practical Pandora's-box |        mean        |   0.684 ± 0.162    |  1.237  |   0.045    |    2.2    |    0.345    |  2.80 |  0.0005  |
+| Pandora's-box           |      original      |   0.676 ± 0.161    |  1.215  |   0.053    |    2.6    |    0.361    |  2.80 |  0.0005  |
+| Practical Pandora's-box |      balanced      |   0.675 ± 0.165    |  1.239  |   0.044    |    2.2    |    0.331    |  2.80 |  0.0004  |
+| Practical Pandora's-box |     optimistic     |   0.675 ± 0.165    |  1.239  |   0.044    |    2.2    |    0.331    |  2.80 |  0.0005  |
+| Baseline                |       random       |   0.626 ± 0.205    |  1.202  |   0.081    |    4.0    |    0.270    |  3.00 |  0.0010  |
+| Baseline                |        full        |   0.463 ± 0.186    |  1.109  |   0.313    |    15.7   |    0.232    |  2.85 |  0.0043  |
 
 A few things to note:
 
@@ -113,15 +113,17 @@ A few things to note:
   be: it knows the true utility and pays no elicitation cost, so it bounds
   everyone from above. (It underperforming elicitors would indicate a
   configuration bug; here it correctly leads.)
-- **`voi_optimal`** declines to elicit at `cost=0.02`: its expected value of
-  information never clears the cost, so it asks zero queries. **`voi`** asks
-  ~0.9 queries on average.
+- All three **VOI** variants (`voi`, `voi_fast`, `voi_optimal`) decline to
+  elicit at `cost=0.02`: the expected value of information never clears the
+  cost, so they ask zero queries and coincide with the no-query oracle (0.776).
+  (`voi_fast` previously over-elicited here; see the fix note below.)
 - Only `pandora` is Baarslag & Gerding's Pandora's-box method (IJCAI 2015);
   `fast`, `mean`, `balanced`, `optimistic`, `pessimistic` (and `full`,
   `random`) are Mohammad & Nakadai's practical elicitation strategies (IEEE
-  SMC 2018). At 10 outcomes the practical variants coincide with `pandora`
-  (same outcome to elicit/offer); they elicit ~2.2 queries but land below the
-  no-query baselines here because, with the default `toughness`, the base
+  SMC 2018). These variants now differ (they use their intended
+  deep/shallow elicitation and expectors) — `pessimistic` leads the eliciting
+  methods here (0.711). They elicit ~2–3 queries but land near/below the
+  no-query baselines because, with the default `toughness`, the base
   negotiator concedes quickly to early (often dominated) agreements, so
   elicitation mostly adds cost. Raising `toughness` (a slower-conceding base
   negotiator) lets elicitation pay off.
@@ -137,24 +139,25 @@ sessions:
 
 | method                  |    variant     | utility (mean±std) | welfare | elic. cost | n_queries | pareto dist | steps | time (s) |
 | ----------------------- | :------------: | :----------------: | :-----: | :--------: | :-------: | :---------: | :---: | :------: |
-| baseline                | full_knowledge |   0.668 ± 0.153    |  1.306  |   0.000    |    0.0    |    0.314    | 2.90  |  0.0017  |
-| Pandora's-box           |    original    |   0.681 ± 0.155    |  1.179  |   0.046    |    2.3    |    0.375    | 2.75  |  0.0032  |
-| Practical Pandora's-box |      fast      |   0.681 ± 0.155    |  1.179  |   0.046    |    2.3    |    0.375    | 2.75  |  0.0035  |
-| Practical Pandora's-box |      mean      |   0.681 ± 0.155    |  1.179  |   0.046    |    2.3    |    0.375    | 2.75  |  0.0043  |
-| Practical Pandora's-box |    balanced    |   0.681 ± 0.155    |  1.179  |   0.046    |    2.3    |    0.375    | 2.75  |  0.0028  |
-| Practical Pandora's-box |   optimistic   |   0.681 ± 0.155    |  1.179  |   0.046    |    2.3    |    0.375    | 2.75  |  0.0021  |
-| Practical Pandora's-box |  pessimistic   |   0.681 ± 0.155    |  1.179  |   0.046    |    2.3    |    0.375    | 2.75  |  0.0022  |
-| VOI                     |  voi_optimal   |   0.680 ± 0.171    |  1.306  |   0.000    |    0.0    |    0.314    | 2.75  |  0.0025  |
-| Baseline                |     random     |   0.493 ± 0.211    |  1.086  |   0.231    |   11.6    |    0.379    | 2.35  |  0.0047  |
-| VOI                     |    voi_fast    |   0.190 ± 0.560    |  0.772  |   0.471    |   23.6    |    0.648    | 2.80  |  1.6239  |
-| Baseline                |      full      |   0.100 ± 0.000    |    —    |   3.017    |   150.9   |      —      | 2.00  |  0.0000  |
+| Practical Pandora's-box |  pessimistic   |   0.690 ± 0.131    |  1.217  |   0.046    |    2.3    |    0.390    |  2.85 |  0.0006  |
+| VOI                     |    voi_fast    |   0.680 ± 0.171    |  1.306  |   0.000    |    0.0    |    0.314    |  2.75 |  0.0015  |
+| VOI                     |  voi_optimal   |   0.680 ± 0.171    |  1.306  |   0.000    |    0.0    |    0.314    |  2.75 |  0.0018  |
+| baseline                | full_knowledge |   0.668 ± 0.153    |  1.306  |   0.000    |    0.0    |    0.314    |  2.90 |  0.0007  |
+| Practical Pandora's-box |      fast      |   0.658 ± 0.150    |  1.264  |   0.045    |    2.2    |    0.373    |  2.75 |  0.0022  |
+| Practical Pandora's-box |      mean      |   0.658 ± 0.150    |  1.264  |   0.045    |    2.2    |    0.373    |  2.75 |  0.0025  |
+| Practical Pandora's-box |    balanced    |   0.642 ± 0.170    |  1.172  |   0.047    |    2.4    |    0.439    |  2.80 |  0.0007  |
+| Practical Pandora's-box |   optimistic   |   0.642 ± 0.170    |  1.172  |   0.047    |    2.4    |    0.439    |  2.80 |  0.0007  |
+| Pandora's-box           |    original    |   0.629 ± 0.165    |  1.270  |   0.049    |    2.5    |    0.354    |  2.75 |  0.0025  |
+| Baseline                |     random     |   0.493 ± 0.211    |  1.086  |   0.231    |    11.6   |    0.379    |  2.35 |  0.0042  |
+| Baseline                |      full      |   0.100 ± 0.000    |    —    |   3.017    |   150.8   |      —      |  2.00 |  0.0000  |
 
-At this scale the no-query baselines (`full_knowledge`, `voi_optimal`) and the
-Pandora's-box / practical family are statistically tied (~0.68; std ≈ 0.16).
-`voi_fast` becomes noisy (it asks ~24 queries, sometimes over-eliciting), and
-`full` cannot reach agreement: eliciting all 100 outcomes costs ~3.0 (above the
-maximum achievable utility of 1.0), so it ends the negotiation immediately and
-settles for the reserved value (0.100).
+At this scale the no-query baselines (`full_knowledge`, `voi_optimal`), the
+Pandora's-box / practical family, and `voi_fast` are all statistically tied
+(~0.68; std ≈ 0.15). `voi_fast` now asks zero queries and coincides with
+`voi_optimal` (it previously over-elicited — ~24 queries, net utility ~0.19 —
+before the cost-aware-gate fix). `full` cannot reach agreement: eliciting all
+100 outcomes costs ~3.0 (above the maximum achievable utility of 1.0), so it
+ends the negotiation immediately and settles for the reserved value (0.100).
 
 ## Available Elicitors
 
