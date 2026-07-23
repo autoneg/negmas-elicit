@@ -774,9 +774,15 @@ class PandoraElicitor(BasePandoraElicitor):
             **kwargs: Additional keyword arguments overriding the defaults,
                       passed to `BasePandoraElicitor.__init__`.
         """
+        # Respect an explicitly-passed base negotiator (e.g. the one the
+        # mechanism configures from `toughness`); only default to a fresh
+        # AspirationNegotiator when none is given. Previously this always
+        # overrode the caller's base_negotiator, which gave the Pandora family
+        # a different (boulware) concession curve than the other elicitors and
+        # made the tournament compare concession strategies, not elicitors.
+        kwargs.setdefault("base_negotiator", AspirationNegotiator())
         kwargs.update(
             dict(
-                base_negotiator=AspirationNegotiator(),
                 opponent_model_factory=lambda x: AdaptiveDiscreteAcceptanceModel.from_negotiation(
                     nmi=x
                 ),
