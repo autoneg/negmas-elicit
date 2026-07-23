@@ -11,7 +11,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 from negmas.common import NegotiatorMechanismInterface, Value
-from negmas.helpers.prob import ScipyDistribution
+from negmas.helpers.prob import UNIFORM, ScipyDistribution
 from negmas.outcomes import Outcome
 from negmas.preferences.preferences import Preferences
 
@@ -44,11 +44,16 @@ class Constraint(ABC):
         full_range: Sequence[tuple[float, float]] | tuple[float, float] = (0.0, 1.0),
         outcomes: list[Outcome] = None,
     ):
-        """Initialize the instance.
+        """Creates a constraint.
 
         Args:
-            full_range: Full range.
-            outcomes: Outcomes.
+            full_range: The full (prior) range of possible utility values,
+                        either a single `(min, max)` tuple applied to every
+                        outcome, or a sequence of `(min, max)` tuples (one
+                        per outcome) when `outcomes` is given.
+            outcomes: [Optional] The list of outcomes this constraint applies
+                      to. If given, `full_range` may be a sequence matching
+                      it in length.
         """
         super().__init__()
         self.outcomes = outcomes
@@ -69,34 +74,39 @@ class Constraint(ABC):
 
     @abstractmethod
     def marginals(self, outcomes: Iterable[Outcome] = None) -> list[ScipyDistribution]:
-        """Marginals.
+        """Returns the marginal (uniform) distribution implied by this
+        constraint for each of the given outcomes, ignoring any correlations
+        between outcomes induced by the constraint.
 
         Args:
-            outcomes: Outcomes.
+            outcomes: The outcomes to get marginals for. If `None`, uses
+                      `self.outcomes`.
 
         Returns:
-            list[ScipyDistribution]: The result.
+            A list of `ScipyDistribution` (one per outcome).
         """
         ...
 
     @abstractmethod
     def marginal(self, outcome: Outcome) -> ScipyDistribution:
-        """Marginal.
+        """Returns the marginal (uniform) distribution implied by this
+        constraint for the given outcome alone.
 
         Args:
-            outcome: Outcome to evaluate.
+            outcome: The outcome to get the marginal distribution for.
 
         Returns:
-            ScipyDistribution: The result.
+            A `ScipyDistribution` describing the allowed utility range for
+            `outcome` under this constraint.
         """
         ...
 
     def __repr__(self):
-        """repr  ."""
+        """Returns a `dict`-style representation of this constraint's fields."""
         return self.__dict__.__repr__()
 
     def __str__(self):
-        """str  ."""
+        """Returns a pretty-printed representation of this constraint's fields."""
         return pprint.pformat(self.__dict__)
 
 
@@ -105,20 +115,24 @@ class MarginalNeutralConstraint(Constraint):
     distribution."""
 
     def marginals(self, outcomes: Iterable[Outcome] = None) -> list[ScipyDistribution]:
-        """Marginals.
+        """Returns the unaffected marginal (uniform over `full_range`)
+        distribution for each of the given outcomes since this constraint
+        type never restricts individual outcomes' marginals.
 
         Args:
-            outcomes: Outcomes.
+            outcomes: The outcomes to get marginals for. If `None`, uses
+                      `self.outcomes`.
 
         Returns:
-            list[ScipyDistribution]: The result.
+            A list of `ScipyDistribution` (uniform over `full_range`), one
+            per outcome.
         """
         if outcomes is None:
             outcomes = self.outcomes
         # this works only for real-valued outcomes.
         return [
             ScipyDistribution(
-                type="uniform",
+                type=UNIFORM,
                 loc=self.full_range[_][0],
                 scale=self.full_range[_][1] - self.full_range[_][0],
             )
@@ -127,23 +141,25 @@ class MarginalNeutralConstraint(Constraint):
 
     def marginal(self, outcome: Outcome) -> ScipyDistribution:
         # this works only for real-valued outcomes.
-        """Marginal.
+        """Returns the unaffected marginal (uniform over `full_range`)
+        distribution for the given outcome since this constraint type never
+        restricts individual outcomes' marginals.
 
         Args:
-            outcome: Outcome to evaluate.
+            outcome: The outcome to get the marginal distribution for.
 
         Returns:
-            ScipyDistribution: The result.
+            A `ScipyDistribution` uniform over `full_range`.
         """
         if self.outcomes is None:
             return ScipyDistribution(
-                type="uniform",
+                type=UNIFORM,
                 loc=self.full_range[0],
                 scale=self.full_range[1] - self.full_range[0],
             )
         indx = self.index[outcome]
         return ScipyDistribution(
-            type="uniform",
+            type=UNIFORM,
             loc=self.full_range[indx][0],
             scale=self.full_range[indx][1] - self.full_range[indx][0],
         )
@@ -158,12 +174,16 @@ class RankConstraint(MarginalNeutralConstraint):
         full_range: Sequence[tuple[float, float]] | tuple[float, float] = (0.0, 1.0),
         outcomes: list[Outcome] = None,
     ):
-        """Initialize the instance.
+        """Creates a rank constraint.
 
         Args:
-            rankings: Rankings.
-            full_range: Full range.
-            outcomes: Outcomes.
+            rankings: The expected ascending ranking of the outcomes, given
+                      as a sorted list of `(utility, index)` pairs (the same
+                      format `is_satisfied` builds internally to compare
+                      against).
+            full_range: The full (prior) range of possible utility values.
+            outcomes: [Optional] The list of outcomes this constraint applies
+                      to.
         """
         super().__init__(full_range=full_range, outcomes=outcomes)
         self.rankings = rankings
@@ -171,14 +191,16 @@ class RankConstraint(MarginalNeutralConstraint):
     def is_satisfied(
         self, preferences: Preferences, outcomes: Iterable[Outcome] | None = None
     ) -> bool:
-        """Check if satisfied.
+        """Checks whether ranking `outcomes` by `preferences` (ascending
+        utility) matches the expected `self.rankings`.
 
         Args:
-            preferences: Preferences.
-            outcomes: Outcomes.
+            preferences: The utility function to evaluate outcomes with.
+            outcomes: The outcomes to rank. If `None`, uses `self.outcomes`.
 
         Returns:
-            bool: The result.
+            `True` if the ascending ranking of `outcomes` by `preferences`
+            equals `self.rankings`.
         """
         if outcomes is None:
             outcomes = self.outcomes
@@ -198,12 +220,16 @@ class ComparisonConstraint(MarginalNeutralConstraint):
         full_range: Sequence[tuple[float, float]] | tuple[float, float] = (0.0, 1.0),
         outcomes: list[Outcome] = None,
     ):
-        """Initialize the instance.
+        """Creates a comparison constraint between exactly two outcomes.
 
         Args:
-            op: Op.
-            full_range: Full range.
-            outcomes: Outcomes.
+            op: The comparison operation to check between the utilities of
+                the two outcomes. Either a `Callable(u1, u2) -> bool` or one
+                of the strings `"less"`/`"l"`/`"<"`, `"greater"`/`"g"`/`">"`,
+                `"equal"`/`"="`/`"=="`, `"le"`/`"<="`, `"ge"`/`">="`.
+            full_range: The full (prior) range of possible utility values.
+            outcomes: [Optional] The two outcomes to compare. Must have
+                      length 2 if given.
         """
         super().__init__(full_range=full_range, outcomes=outcomes)
         if outcomes is not None and len(outcomes) != 2:
@@ -229,14 +255,16 @@ class ComparisonConstraint(MarginalNeutralConstraint):
     def is_satisfied(
         self, preferences: Preferences, outcomes: Iterable[Outcome] | None = None
     ) -> bool:
-        """Check if satisfied.
+        """Checks whether `self.op(u(outcomes[0]), u(outcomes[1]))` holds
+        for the given `preferences`.
 
         Args:
-            preferences: Preferences.
-            outcomes: Outcomes.
+            preferences: The utility function to evaluate outcomes with.
+            outcomes: The two outcomes to compare. If `None`, uses
+                      `self.outcomes`. Must have length 2.
 
         Returns:
-            bool: The result.
+            `True` if the comparison operation is satisfied.
         """
         if outcomes is None:
             outcomes = self.outcomes
@@ -250,7 +278,7 @@ class ComparisonConstraint(MarginalNeutralConstraint):
         return self.op(u[0], u[1])
 
     def __str__(self):
-        """str  ."""
+        """Returns a human readable `outcome1 op outcome2` representation."""
         return f"{self.outcomes[0]} {self.op_name} {self.outcomes[0]}"
 
     __repr__ = __str__
@@ -266,13 +294,19 @@ class RangeConstraint(Constraint):
         outcomes: list[Outcome] = None,
         eps=1e-5,
     ):
-        """Initialize the instance.
+        """Creates a range constraint.
 
         Args:
-            rng: Rng.
-            full_range: Full range.
-            outcomes: Outcomes.
-            eps: Eps.
+            rng: The allowed `(min, max)` utility range (either value may be
+                 `None` meaning unbounded on that side, falling back to
+                 `full_range`), or a sequence of such tuples (one per
+                 outcome) when `outcomes` is given.
+            full_range: The full (prior) range of possible utility values,
+                        used to fill in `None` bounds in `rng`.
+            outcomes: [Optional] The list of outcomes this constraint applies
+                      to.
+            eps: A small tolerance added when checking whether a utility
+                 value lies within the allowed range.
         """
         super().__init__(full_range=full_range, outcomes=outcomes)
 
@@ -296,14 +330,16 @@ class RangeConstraint(Constraint):
     def is_satisfied(
         self, preferences: Preferences, outcomes: Iterable[Outcome] | None = None
     ) -> bool:
-        """Check if satisfied.
+        """Checks that the utility (from `preferences`) of every one of
+        `outcomes` lies within `self.range` (within `eps` tolerance).
 
         Args:
-            preferences: Preferences.
-            outcomes: Outcomes.
+            preferences: The utility function to evaluate outcomes with.
+            outcomes: The outcomes to check. If `None`, uses `self.outcomes`.
 
         Returns:
-            bool: The result.
+            `True` if all outcomes have utility within `[range[0] - eps,
+            range[1] + eps]`.
         """
         if outcomes is None:
             outcomes = self.outcomes
@@ -322,20 +358,23 @@ class RangeConstraint(Constraint):
         return True
 
     def marginals(self, outcomes: Iterable[Outcome] = None) -> list[ScipyDistribution]:
-        """Marginals.
+        """Returns the marginal distribution (uniform over `effective_range`,
+        i.e. `range` with any `None` bound filled in from `full_range`) for
+        each of the given outcomes.
 
         Args:
-            outcomes: Outcomes.
+            outcomes: The outcomes to get marginals for. If `None`, uses
+                      `self.outcomes`.
 
         Returns:
-            list[ScipyDistribution]: The result.
+            A list of `ScipyDistribution`, one per outcome.
         """
         if outcomes is None:
             outcomes = self.outcomes
         # this works only for real-valued outcomes.
         return [
             ScipyDistribution(
-                type="uniform",
+                type=UNIFORM,
                 loc=self.effective_range[_][0],
                 scale=self.effective_range[_][1] - self.effective_range[_][0],
             )
@@ -344,29 +383,31 @@ class RangeConstraint(Constraint):
 
     def marginal(self, outcome: Outcome) -> ScipyDistribution:
         # this works only for real-valued outcomes.
-        """Marginal.
+        """Returns the marginal distribution (uniform over `effective_range`)
+        for the given outcome.
 
         Args:
-            outcome: Outcome to evaluate.
+            outcome: The outcome to get the marginal distribution for.
 
         Returns:
-            ScipyDistribution: The result.
+            A `ScipyDistribution` uniform over the effective range for this
+            outcome.
         """
         if self.outcomes is None:
             return ScipyDistribution(
-                type="uniform",
+                type=UNIFORM,
                 loc=self.effective_range[0],
                 scale=self.effective_range[1] - self.effective_range[0],
             )
         indx = self.index[outcome]
         return ScipyDistribution(
-            type="uniform",
+            type=UNIFORM,
             loc=self.effective_range[indx][0],
             scale=self.effective_range[indx][1] - self.effective_range[indx][0],
         )
 
     def __str__(self):
-        """str  ."""
+        """Returns a human readable `range` (and `outcomes` if any) representation."""
         result = f"{self.range}"
         if self.outcomes is not None and len(self.outcomes) > 0:
             result += f"{self.outcomes}"
@@ -377,7 +418,17 @@ class RangeConstraint(Constraint):
 
 @dataclass
 class Answer:
-    """Answer implementation."""
+    """One possible answer to a `Query`.
+
+    Attributes:
+        outcomes: The outcomes this answer's `constraint` applies to.
+        constraint: The `Constraint` that must be satisfied by the user's
+                    true utility function for this answer to be the correct
+                    (selected) one.
+        cost: An additional cost incurred specifically for getting this
+              answer (on top of the query's own `cost`).
+        name: A human readable name for this answer (e.g. `"yes"`/`"no"`).
+    """
 
     outcomes: list[Outcome]
     constraint: Constraint
@@ -385,7 +436,8 @@ class Answer:
     name: str = ""
 
     def __str__(self):
-        """str  ."""
+        """Returns a human readable representation of the answer (its name
+        or its constraint/cost/outcomes)."""
         if len(self.name) > 0:
             return self.name + f"{self.constraint}"
         else:
@@ -401,7 +453,22 @@ class Answer:
 
 @dataclass
 class Query:
-    """Query implementation."""
+    """A question that can be asked to a `User`, with its set of possible
+    `Answer`s.
+
+    The user's `ask` method checks each of `answers`'s constraints in order
+    against the true utility function and returns the first one satisfied.
+
+    Attributes:
+        answers: The list of possible `Answer`s to this query.
+        probs: The prior probability of each answer being the correct one
+               (same length/order as `answers`), used to estimate the
+               expected value of asking this query before it is actually
+               asked.
+        cost: The cost of asking this query (independent of the answer
+              received).
+        name: A human readable name for this query.
+    """
 
     answers: list[Answer]
     probs: list[float]
@@ -409,7 +476,8 @@ class Query:
     name: str = ""
 
     def __str__(self):
-        """str  ."""
+        """Returns a human readable representation of the query (its name,
+        or its answers and cost if not zero)."""
         if len(self.name) > 0:
             return self.name
         else:
@@ -423,7 +491,17 @@ class Query:
 
 @dataclass
 class QResponse:
-    """QResponse implementation."""
+    """The response to a `Query` asked of a `User`.
+
+    Attributes:
+        answer: The selected `Answer` (whose constraint was satisfied by the
+                true utility function), or `None` if no answer was found to
+                be satisfied (the query failed) or the query itself was `None`.
+        indx: The index of `answer` within the original query's `answers`
+              list (`-1` if `answer` is `None`).
+        cost: The total cost incurred for asking the query and getting this
+              answer.
+    """
 
     answer: Answer | None
     indx: int
@@ -436,11 +514,23 @@ def possible_queries(
     user: User,
     outcome: Outcome = None,
 ) -> list[tuple[Outcome, list[ScipyDistribution], float]]:
-    """Gets all queries that could be asked for that outcome until an exact value of ufun is found.
+    """Simulates applying `strategy` to `outcome` repeatedly (on deep copies of
+    `user` and `strategy` so no real elicitation/cost is incurred) until an
+    exact utility value is found, and returns every query that would be asked
+    along the way together with its (incremental) cost.
 
-    For each ask,  the following tuple is returned:
-    (outcome, query, cost)
+    Args:
+        nmi: The `NegotiatorMechanismInterface` of the negotiation (used to
+             get the outcomes if `outcome` is `None`).
+        strategy: The `EStrategy` to simulate (deep-copied before use).
+        user: The `User` to simulate asking (deep-copied before use).
+        outcome: The single outcome to compute possible queries for. If
+                 `None`, computes them for every outcome in `nmi`.
 
+    Returns:
+        A list of `(outcome, query, cost)` tuples, one for each query that
+        would be asked while narrowing down the outcome's utility to an
+        exact value.
     """
     user = copy.deepcopy(user)
     strategy = copy.deepcopy(strategy)
@@ -490,11 +580,20 @@ def possible_queries(
 def next_query(
     strategy: EStrategy, user: User, outcome: Outcome = None
 ) -> list[tuple[Outcome, Query, float]]:
-    """Gets the possible outcomes for the next ask with its cost.
+    """Gets the immediate next query (without simulating further ahead) for
+    one or all outcomes, together with the cost of asking it.
 
-    The following tuple is returned:
-    (outcome, query, cost)
+    Args:
+        strategy: The `EStrategy` used to compute the next query for an
+                  outcome.
+        user: The `User` who would be asked (used only to get the cost of
+              asking, no question is actually asked).
+        outcome: The single outcome to compute the next query for. If
+                 `None`, computes it for every outcome known to `strategy`.
 
+    Returns:
+        A list of `(outcome, query, cost)` tuples, one per outcome
+        considered.
     """
 
     def _next_query(outcome, strategy=strategy):
@@ -510,21 +609,31 @@ def next_query(
 
 
 class CostEvaluator:
-    """CostEvaluator implementation."""
+    """Computes the total cost of asking a `Query` and getting a particular
+    `Answer`.
+
+    The total cost is the sum of a fixed per-question `cost` (e.g. the
+    `User`'s base cost), the query's own `cost`, and the specific answer's
+    `cost` (if any).
+    """
 
     def __init__(self, cost: float):
-        """Initialize the instance.
+        """Creates a cost evaluator with a fixed per-question cost.
 
         Args:
-            cost: Cost.
+            cost: The fixed cost incurred for asking any question (e.g. the
+                  `User`'s base cost).
         """
         self.cost = cost
 
     def __call__(self, query: Query, answer: Answer):
-        """Make instance callable.
+        """Computes `self.cost + query.cost + answer.cost`.
 
         Args:
-            query: Query.
-            answer: Answer.
+            query: The query that was asked.
+            answer: The answer that was received.
+
+        Returns:
+            The total cost of asking `query` and getting `answer`.
         """
         return self.cost + query.cost + (answer.cost if answer.cost else 0.0)

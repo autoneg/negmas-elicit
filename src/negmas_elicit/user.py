@@ -20,7 +20,18 @@ __all__ = ["User", "ElicitationRecord"]
 
 @dataclass
 class ElicitationRecord:
-    """ElicitationRecord implementation."""
+    """A record of a single elicitation act (one query asked and answered).
+
+    Attributes:
+        cost: The total cost incurred for asking this query and getting this
+              specific answer.
+        query: The `Query` that was asked.
+        answer_index: The index (within `query.answers`) of the answer that
+                      was selected as satisfied by the user's true preferences.
+        step: The negotiation step at which this query was asked (`None` if
+              asked outside of a negotiation, i.e. `nmi` was not set on the
+              `User`).
+    """
 
     cost: float
     query: Query
@@ -28,7 +39,8 @@ class ElicitationRecord:
     step: int | None = None
 
     def __str__(self):
-        """str  ."""
+        """Returns a human readable representation showing the query, the
+        selected answer and the cost (and step if known)."""
         if self.step is None:
             return f"{self.query}: {self.query.answers[self.answer_index]} @{self.cost}"
         return f"[{self.step}] {self.query}: {self.query.answers[self.answer_index]} @{self.cost}"
@@ -49,13 +61,16 @@ class User(Rational):
     """
 
     def __init__(self, cost: float = 0.0, nmi=None, *args, **kwargs):
-        """Initialize the instance.
+        """Creates a `User` around a (possibly not yet set) real preferences.
 
         Args:
-            cost: Cost.
-            nmi: Nmi.
-            *args: Additional positional arguments.
-            **kwargs: Additional keyword arguments.
+            cost: A fixed cost incurred for every question asked to the user
+                  (added on top of any per-query/per-answer cost).
+            nmi: [Optional] The `AgentMechanismInterface` representing *the*
+                 negotiation session engaged in by this user using this `ufun`.
+            *args: Additional positional arguments passed to `Rational`.
+            **kwargs: Additional keyword arguments passed to `Rational` (e.g.
+                      `preferences` or `ufun`).
         """
         super().__init__(*args, **kwargs)
         self.cost = cost

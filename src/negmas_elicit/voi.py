@@ -120,12 +120,8 @@ class BaseVOIElicitor(BaseElicitor):
         update_related_queries=True,
         **kwargs,
     ) -> None:
-        """Initialize the instance.
-
-        Args:
-            strategy: Strategy.
-            user: User.
-            **kwargs: Additional keyword arguments.
+        """Creates a VOI-based elicitor. See the class docstring for the
+        meaning of all parameters.
         """
         super().__init__(strategy=strategy, user=user, **kwargs)
         self.eeu_query = None
@@ -182,9 +178,10 @@ class BaseVOIElicitor(BaseElicitor):
 
     @abstractmethod
     def init_optimal_policy(self) -> None:
-        """Gets the optimal policy given Negotiator utility_priors.
+        """Computes the optimal offering policy (order in which to offer
+        outcomes) given the negotiator's current utility priors.
 
-        The optimal plicy should be sorted ascendingly
+        The optimal policy should be sorted ascendingly
         on -EU or -EU * Acceptance"""
 
     def init_elicitation(
@@ -441,14 +438,17 @@ class BaseVOIElicitor(BaseElicitor):
         return True
 
     def utility_on_rejection(self, outcome: Outcome, state: MechanismState) -> Value:
-        """Utility on rejection.
+        """Not applicable to VOI elicitors: they compute the optimal
+        offering policy and its EEU directly rather than modeling a
+        per-outcome utility of rejection.
 
         Args:
-            outcome: Outcome to evaluate.
-            state: Current state.
+            outcome: Outcome to evaluate (unused).
+            state: Current mechanism state (unused).
 
-        Returns:
-            Value: The result.
+        Raises:
+            ValueError: Always raised; this method should never be called
+                        on a VOI elicitor.
         """
         raise ValueError("utility_on_rejection should never be called on VOI Elicitors")
 
@@ -486,7 +486,11 @@ class VOIElicitor(BaseVOIElicitor):
     """
 
     def eeu(self, policy: np.ndarray, eus: np.ndarray) -> float:
-        """Expected Expected Negotiator for following the policy"""
+        """Computes the Expected Expected Utility (EEU) of following `policy`
+        (the negotiator's own offering order), i.e. the expected utility
+        obtained from offering outcomes in `policy` order given the
+        opponent's acceptance probabilities, discounted by the probability
+        that earlier offers in the policy were rejected."""
         p = np.ones(len(policy) + 1)
         m = self.opponent_model.acceptance_probabilities()[policy]
         r = 1 - m
@@ -508,7 +512,9 @@ class VOIElicitor(BaseVOIElicitor):
         return round(float(result), 6)
 
     def init_optimal_policy(self) -> None:
-        """Gets the optimal policy given Negotiator utility_priors"""
+        """Computes the optimal offering policy (order in which to offer
+        outcomes) given the negotiator's current utility priors and the
+        opponent model's acceptance probabilities."""
         nmi = self._nmi
         n_outcomes = nmi.n_outcomes
         # remaining_steps = nmi.remaining_steps if nmi.remaining_steps is not None else nmi.n_outcomes
@@ -600,7 +606,9 @@ class VOIFastElicitor(BaseVOIElicitor):
     """
 
     def init_optimal_policy(self) -> None:
-        """Gets the optimal policy given Negotiator utility_priors"""
+        """Computes the optimal offering policy (order in which to offer
+        outcomes) given the negotiator's current utility priors and the
+        opponent model's acceptance probabilities."""
         nmi = self._nmi
         n_outcomes = nmi.n_outcomes
         eus = -self.eus
@@ -703,7 +711,11 @@ class VOINoUncertaintyElicitor(BaseVOIElicitor):
     own utility function"""
 
     def eeu(self, policy: np.ndarray, eup: np.ndarray) -> float:
-        """Expected Expected Negotiator for following the policy"""
+        """Computes the Expected Expected Utility (EEU) of following `policy`
+        (the negotiator's own offering order), i.e. the expected utility
+        obtained from offering outcomes in `policy` order given the
+        opponent's acceptance probabilities, discounted by the probability
+        that earlier offers in the policy were rejected."""
         p = np.ones(len(policy) + 1)
         r = 1 - self.opponent_model.acceptance_probabilities()[policy]
         p[1:] = np.cumprod(r)
@@ -723,7 +735,9 @@ class VOINoUncertaintyElicitor(BaseVOIElicitor):
         return float(result)  # it was - for a reason I do not undestand (2018.11.16)
 
     def init_optimal_policy(self) -> None:
-        """Gets the optimal policy given Negotiator utility_priors"""
+        """Computes the optimal offering policy (order in which to offer
+        outcomes) given the negotiator's current utility priors and the
+        opponent model's acceptance probabilities."""
         nmi = self._nmi
         n_outcomes = nmi.n_outcomes
         p = self.opponent_model.acceptance_probabilities()
@@ -740,14 +754,15 @@ class VOINoUncertaintyElicitor(BaseVOIElicitor):
             self.outcome_in_policy[indx] = (_, indx)
 
     def init_query_eeus(self) -> None:
-        """Init query eeus."""
+        """Does nothing since this dummy elicitor never elicits and hence
+        needs no query-EEU heap."""
         pass
 
     def add_query(self, qeeu: tuple[float, int]) -> None:
-        """Add query.
+        """Does nothing since this dummy elicitor never queues queries.
 
         Args:
-            qeeu: Qeeu.
+            qeeu: A `(-EEU, query_index)` tuple (unused).
         """
         pass
 
@@ -757,10 +772,14 @@ class VOINoUncertaintyElicitor(BaseVOIElicitor):
         return -1.0
 
     def elicit_single(self, state: MechanismState):
-        """Elicit single.
+        """Does nothing since this dummy elicitor assumes no uncertainty and
+        therefore never elicits.
 
         Args:
-            state: Current state.
+            state: The mechanism state (unused).
+
+        Returns:
+            `False`, indicating no elicitation act was performed.
         """
         return False
 
@@ -817,10 +836,41 @@ class VOIOptimalElicitor(BaseElicitor):
             Callable[[NegotiatorMechanismInterface], DiscreteAcceptanceModel]
         ) = lambda x: AdaptiveDiscreteAcceptanceModel.from_negotiation(nmi=x),
     ) -> None:
-        """Initialize the instance.
+        """Creates a `VOIOptimalElicitor`.
 
         Args:
-            user: User.
+            user: The user to elicit.
+            base_negotiator: The base negotiator used for proposing/responding.
+            adaptive_answer_probabilities: If `True`, answer probabilities are
+                                           based on the current estimate of the
+                                           utility distribution rather than
+                                           assumed equal.
+            expector_factory: A `Callable` used to reduce a probabilistic
+                              utility to a real number.
+            single_elicitation_per_round: If `True`, only a single elicitation
+                                          act is allowed per negotiation round.
+            continue_eliciting_past_reserved_val: If `True`, elicitation
+                                                  continues even if the
+                                                  estimated utility is below
+                                                  the reserved value.
+            epsilon: A small number used to stop elicitation when the
+                     uncertainty in the utility value is under it.
+            resolution: The smallest utility-range width considered when
+                        searching for the optimal query threshold `x` in
+                        "is u(o) > x?" queries.
+            true_utility_on_zero_cost: If `True`, the true utility will be
+                                       elicited for outcomes if the
+                                       elicitation cost is zero.
+            each_outcome_once: If `True`, each outcome is to be offered
+                               exactly once.
+            update_related_queries: If `True`, queries related to one that
+                                    was asked/answered get updated based on
+                                    the answer.
+            prune: If `True`, stops searching for better queries for an
+                   outcome as soon as a valid one is found (faster but may
+                   miss a slightly better query).
+            opponent_model_factory: A `Callable` used to construct the
+                                    opponent model.
         """
         super().__init__(
             strategy=None,
@@ -963,7 +1013,9 @@ class VOIOptimalElicitor(BaseElicitor):
             )
 
     def init_optimal_policy(self) -> None:
-        """Gets the optimal policy given Negotiator utility_priors"""
+        """Computes the optimal offering policy (order in which to offer
+        outcomes) given the negotiator's current utility priors and the
+        opponent model's acceptance probabilities."""
         nmi = self._nmi
         n_outcomes = nmi.n_outcomes
         eus = -self.eus
@@ -1001,11 +1053,18 @@ class VOIOptimalElicitor(BaseElicitor):
         preferences: IPUtilityFunction | Distribution | None,
         queries: list[Query] | None = None,
     ) -> None:
-        """Init elicitation.
+        """Initializes elicitation: computes the initial optimal offering
+        policy and the optimal continuous ("is u(o) > x?") queries and their
+        EEU.
 
         Args:
-            preferences: Preferences.
-            queries: Queries.
+            preferences: The (uncertain) prior utility function.
+            queries: Must be `None`; this elicitor always generates its own
+                     continuous queries and does not accept a user-supplied
+                     query set.
+
+        Raises:
+            ValueError: If `queries` is not `None`.
         """
         super().init_elicitation(preferences=preferences)
         if queries is not None:
@@ -1021,10 +1080,15 @@ class VOIOptimalElicitor(BaseElicitor):
         self._elicitation_time += time.perf_counter() - strt_time
 
     def best_offer(self, state: MechanismState) -> tuple[Outcome | None, float]:
-        """Maximum Expected Utility at a given aspiration level (alpha)
+        """Returns the outcome at the top of the optimal offering policy and
+        its expected utility, or `(None, reserved_value)` if that outcome's
+        expected utility is below the reserved value.
 
         Args:
-            state:
+            state: The mechanism state.
+
+        Returns:
+            A `(outcome, expected_utility)` tuple.
         """
         if self.each_outcome_once:
             # todo this needs correction. When I opp from the eu_policy, all eeu_query become wrong
@@ -1043,26 +1107,23 @@ class VOIOptimalElicitor(BaseElicitor):
         )
 
     def can_elicit(self) -> bool:
-        """Can elicit.
-
-        Returns:
-            bool: The result.
-        """
+        """Always can elicit"""
         return True
 
     def before_eliciting(self):
-        """Before eliciting."""
+        """Called every round before trying to elicit. Does nothing"""
         pass
 
     def on_opponent_model_updated(
         self, outcomes: list[Outcome], old: list[float], new: list[float]
     ) -> None:
-        """On opponent model updated.
+        """Recomputes the optimal policy and query EEUs whenever the
+        opponent model's acceptance probabilities change.
 
         Args:
-            outcomes: Outcomes.
-            old: Old.
-            new: New.
+            outcomes: The updated outcomes.
+            old: The old acceptance probabilities.
+            new: The new acceptance probabilities.
         """
         if any(o != n for o, n in zip(old, new)):
             self.init_optimal_policy()
@@ -1076,10 +1137,16 @@ class VOIOptimalElicitor(BaseElicitor):
             self.init_optimal_policy()
 
     def elicit_single(self, state: MechanismState):
-        """Elicit single.
+        """Conducts a single elicitation act: asks the top continuous query
+        from the EEU heap (if worth it) and updates the utility estimate,
+        optimal policy and query set accordingly.
 
         Args:
-            state: Current state.
+            state: The mechanism state.
+
+        Returns:
+            `True` if an elicitation act was performed, `False` otherwise
+            (ending elicitation for this round).
         """
         if self.eeu_query is not None and len(self.eeu_query) < 1:
             return False
@@ -1155,22 +1222,25 @@ class VOIOptimalElicitor(BaseElicitor):
         return True
 
     def utility_on_rejection(self, outcome: Outcome, state: MechanismState) -> Value:
-        """Utility on rejection.
+        """Not applicable to VOI elicitors: they compute the optimal
+        offering policy and its EEU directly rather than modeling a
+        per-outcome utility of rejection.
 
         Args:
-            outcome: Outcome to evaluate.
-            state: Current state.
+            outcome: Outcome to evaluate (unused).
+            state: Current mechanism state (unused).
 
-        Returns:
-            Value: The result.
+        Raises:
+            ValueError: Always raised; this method should never be called
+                        on a VOI elicitor.
         """
         raise ValueError("utility_on_rejection should never be called on VOI Elicitors")
 
     def add_query(self, qeeu: tuple[float, int]) -> None:
-        """Add query.
+        """Adds a query to the heap of queries ordered by (negative) EEU.
 
         Args:
-            qeeu: Qeeu.
+            qeeu: A `(-EEU, query_index)` tuple.
         """
         heappush(self.eeu_query, qeeu)
 

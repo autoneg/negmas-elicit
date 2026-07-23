@@ -57,6 +57,8 @@ markdown_extensions:
 nav:
   - Home: index.md
   - Getting Started: getting-started.md
+  - Running Evaluations: evaluations.md
+  - Repository Structure: repository-structure.md
   - API Reference: api.md
 
 extra:

@@ -13,7 +13,7 @@ import pandas as pd
 from negmas import warnings
 from negmas.genius import GeniusNegotiator
 from negmas.helpers import create_loggers, instantiate
-from negmas.helpers.prob import ScipyDistribution
+from negmas.helpers.prob import UNIFORM, ScipyDistribution
 from negmas.inout import load_genius_domain_from_folder
 from negmas.mechanisms import Mechanism
 from negmas.models.acceptance import UncertainOpponentModel
@@ -60,7 +60,7 @@ def uniform():
     """Uniform."""
     loc = random.random()
     scale = random.random() * (1.0 - loc)
-    return ScipyDistribution(type="uniform", loc=loc, scale=scale)
+    return ScipyDistribution(type=UNIFORM, loc=loc, scale=scale)
 
 
 def current_aspiration(elicitor, outcome: Outcome, negotiation: Mechanism) -> float:
@@ -132,19 +132,18 @@ def create_negotiator(
                 toughness = 2 * (toughness - 0.5)
                 toughness = 1 - 0.9 * toughness
             asp_kind = toughness
-        negotiator = AspirationNegotiator(
-            aspiration_type=asp_kind, can_propose=can_propose, **kwargs
-        )
+        # AspirationNegotiator no longer accepts ``can_propose``; it always
+        # proposes.  Opponents in the elicitation experiments always propose,
+        # so dropping the flag matches the intended behaviour.
+        negotiator = AspirationNegotiator(aspiration_type=asp_kind, **kwargs)
     elif negotiator_type.startswith("genius"):
         class_name = negotiator_type[len("genius") :]
         if class_name.startswith("_"):
             class_name = class_name[1:]
         if class_name == "auto" or len(class_name) < 1:
-            negotiator = GeniusNegotiator.random_negotiator(can_propose=can_propose)
+            negotiator = GeniusNegotiator.random_negotiator()
         else:
-            negotiator = GeniusNegotiator(
-                java_class_name=class_name, can_propose=can_propose
-            )
+            negotiator = GeniusNegotiator(java_class_name=class_name)
         negotiator.preferences = preferences
     else:
         raise ValueError(f"Unknown opponents type {negotiator_type}")
@@ -173,7 +172,22 @@ def _end(x):
 
 
 class SAOElicitingMechanism(SAOMechanism):
-    """SAOEliciting mechanism."""
+    """An `SAOMechanism` (alternating-offers negotiation) set up to run a
+    single elicitor against a single opponent negotiator.
+
+    This is a convenience wrapper that, given the elicitor's true utility
+    function and cost, the opponent's utility function, and the desired
+    elicitor type/strategy, builds a `User`, an (optional) `EStrategy` and
+    the requested elicitor (baseline, Pandora's box or VOI based), then adds
+    both the elicitor and the opponent to the mechanism so the negotiation
+    can be `run` (or stepped through with `step`) directly. It also tracks
+    elicitation-specific statistics (`elicitation_state`) that are updated at
+    the start and end of the negotiation and exposes helper logging methods
+    and a `plot` method for visualizing the negotiation/elicitation history.
+
+    Use `generate_config` to build a random or Genius-domain-based
+    configuration `dict` that can be passed (as `**kwargs`) to `__init__`.
+    """
 
     def __init__(
         self,
@@ -200,31 +214,68 @@ class SAOElicitingMechanism(SAOMechanism):
         cost_assuming_titration=False,
         name: str | None = None,
     ):
-        """Initialize the instance.
+        """Creates the mechanism, the elicitor (of the requested `elicitor_type`)
+        and the `User` wrapping the elicitor's true utility function, then adds
+        both the elicitor and `opponent` as negotiators.
 
         Args:
-            priors: Priors.
-            true_utilities: True utilities.
-            elicitor_reserved_value: Elicitor reserved value.
-            cost: Cost.
-            opp_utility: Opp utility.
-            opponent: Opponent.
-            n_steps: N steps.
-            time_limit: Time limit.
-            base_agent: Base agent.
-            opponent_model: Opponent model.
-            elicitation_strategy: Elicitation strategy.
-            toughness: Toughness.
-            elicitor_type: Elicitor type.
-            history_file_name: History file name.
-            screen_log: Screen log.
-            dynamic_queries: Dynamic queries.
-            each_outcome_once: Each outcome once.
-            rational_answer_probs: Rational answer probs.
-            update_related_queries: Update related queries.
-            resolution: Resolution.
-            cost_assuming_titration: Cost assuming titration.
-            name: Name.
+            priors: The elicitor's initial (uncertain) utility function
+                    (an `IPUtilityFunction` giving a distribution per outcome).
+            true_utilities: The elicitor's real (hidden) utility values, one
+                            per outcome in the same order as `priors`'s outcomes.
+            cost: The cost of asking the user (elicitor) a single question.
+            elicitor_reserved_value: The elicitor's real reserved value (defaults
+                                     to 0.0 if `None`).
+            opp_utility: The opponent's utility function.
+            opponent: The opponent negotiator to add to the mechanism.
+            n_steps: Maximum number of negotiation rounds (steps), or `None`.
+            time_limit: Maximum real time for the negotiation, or `None`.
+            base_agent: The type of negotiator to use as the elicitor's
+                        `base_negotiator` (see `create_negotiator`), e.g.
+                        `"aspiration"`.
+            opponent_model: The opponent (acceptance) model to use for the
+                            elicitor.
+            elicitation_strategy: The name of the `EStrategy` to use for deep
+                                  elicitation (e.g. `"pingpong"`, `"bisection"`).
+                                  Ignored if `elicitor_type` requests a VOI
+                                  optimal elicitor (which generates its own
+                                  continuous queries).
+            toughness: Toughness of the base negotiator used by the elicitor.
+            elicitor_type: Which elicitor algorithm to use. Recognized values
+                           include `"full"`, `"dummy"`, `"full_knowledge"`,
+                           `"random_deep"`, `"random_shallow"`/`"random"`,
+                           `"pessimistic"`, `"optimistic"`, `"balanced"`,
+                           `"pandora"`, `"fast"`, `"mean"`, and any name
+                           containing `"voi"` (optionally combined with
+                           `"fast"`, `"optimal"`, `"no_uncertainty"`/
+                           `"full_knowledge"`, `"balanced"`, `"optimistic"`/
+                           `"max"`, `"pessimistic"`/`"min"`).
+            history_file_name: [Optional] File to write negotiation logs to.
+            screen_log: If `True`, also logs to the screen (at DEBUG level);
+                        otherwise only ERROR-level logs go to the screen.
+            dynamic_queries: If `True` and using a VOI elicitor (other than
+                             the optimal one), queries are generated on the
+                             fly from `elicitation_strategy` instead of being
+                             precompiled from a fixed set of thresholds.
+            each_outcome_once: If `True`, each outcome may only be offered
+                               once by the elicitor.
+            rational_answer_probs: If `True` (and using precompiled VOI
+                                   queries), answer probabilities are set
+                                   proportionally to the query threshold
+                                   instead of assumed equal (0.5/0.5).
+            update_related_queries: If `True`, queries related to one that
+                                    was asked/answered get updated based on
+                                    the answer (VOI elicitors only).
+            resolution: The smallest uncertainty range/step considered
+                        during elicitation. If `None`, it is set to
+                        `max(elicitor_reserved_value / 4, 0.025)`.
+            cost_assuming_titration: If `True` (and using precompiled VOI
+                                     queries), the cost of each precompiled
+                                     query is scaled by how far it is from
+                                     the ends of the threshold range,
+                                     simulating the cost of reaching it via
+                                     titration.
+            name: [Optional] A name for this mechanism/negotiation.
         """
         self.elicitation_state = {}
         initial_priors = priors
@@ -239,23 +290,33 @@ class SAOElicitingMechanism(SAOMechanism):
             outcomes=outcomes,
             n_steps=n_steps,
             time_limit=time_limit,
-            max_n_agents=2,
+            max_n_negotiators=2,
             dynamic_entry=False,
             name=name,
             extra_callbacks=True,
         )
         if elicitor_reserved_value is None:
             elicitor_reserved_value = 0.0
+        # Recent negmas builds a ``ContiguousIssue`` outcome-space for integer
+        # outcomes while utility functions built from a mapping infer a
+        # ``CategoricalIssue``.  The two enumerate the same outcomes but fail
+        # the outcome-space containment check performed by ``Mechanism.add``.
+        # Align every utility function with the mechanism's own outcome-space.
+        for _pref in (initial_priors, opp_utility):
+            if _pref is not None:
+                _pref.outcome_space = self.outcome_space
         self.logger = create_loggers(
             file_name=history_file_name,
             screen_level=logging.DEBUG if screen_log else logging.ERROR,
         )
         user = User(
             preferences=MappingUtilityFunction(
-                dict(zip(self.outcomes, self.U)), reserved_value=elicitor_reserved_value
+                dict(zip(self.outcomes, self.U)),
+                reserved_value=elicitor_reserved_value,
+                outcome_space=self.outcome_space,
             ),
             cost=cost,
-            nmi=self.nmi,
+            nmi=self.shared_nmi,
         )
         if resolution is None:
             resolution = max(elicitor_reserved_value / 4, 0.025)
@@ -263,7 +324,7 @@ class SAOElicitingMechanism(SAOMechanism):
             strategy = None
         else:
             strategy = EStrategy(strategy=elicitation_strategy, resolution=resolution)
-            strategy.on_enter(nmi=self.nmi, preferences=initial_priors)
+            strategy.on_enter(nmi=self.shared_nmi, preferences=initial_priors)
 
         def create_elicitor(type_, strategy=strategy, opponent_model=opponent_model):
             """Create elicitor.
@@ -419,7 +480,7 @@ class SAOElicitingMechanism(SAOMechanism):
 
         if isinstance(opponent, GeniusNegotiator):
             if n_steps is not None and time_limit is not None:
-                self.nmi.n_steps = None
+                self.shared_nmi.n_steps = None
 
         self.add(opponent, preferences=opp_utility)
         self.add(elicitor, preferences=initial_priors)
@@ -452,31 +513,57 @@ class SAOElicitingMechanism(SAOMechanism):
         opponent_toughness=0.9,
         opponent_reserved_value=0.0,
     ) -> dict[str, Any]:
-        """Generate config.
+        """Builds a configuration `dict` (suitable to pass as `**kwargs` to
+        `__init__`) for a random bilateral negotiation domain, or one loaded
+        from a Genius XML domain folder.
 
         Args:
-            cost: Cost.
-            n_outcomes: N outcomes.
-            rand_preferencess: Rand preferencess.
-            conflict: Conflict.
-            conflict_delta: Conflict delta.
-            winwin: Winwin.
-            genius_folder: Genius folder.
-            n_steps: N steps.
-            time_limit: Time limit.
-            own_utility_uncertainty: Own utility uncertainty.
-            own_uncertainty_variablility: Own uncertainty variablility.
-            own_reserved_value: Own reserved value.
-            own_base_agent: Own base agent.
-            opponent_model_uncertainty: Opponent model uncertainty.
-            opponent_model_adaptive: Opponent model adaptive.
-            opponent_proposes: Opponent proposes.
-            opponent_type: Opponent type.
-            opponent_toughness: Opponent toughness.
-            opponent_reserved_value: Opponent reserved value.
+            cost: The cost of asking the elicitor (user) a single question.
+            n_outcomes: Number of outcomes to generate (only used if
+                        `genius_folder` is not given).
+            rand_preferencess: If `True`, generates fully random bilateral
+                               utility functions; otherwise generates them
+                               with the given `conflict`/`winwin` levels.
+            conflict: [Unused directly here but accepted for API symmetry]
+                      target conflict level (see `winwin`/`opponent_toughness`).
+            conflict_delta: Allowed deviation from the target conflict level
+                            when generating non-random utility functions.
+            winwin: Whether to bias generated utility functions towards a
+                    win-win outcome (only used if `rand_preferencess` is
+                    `False`).
+            genius_folder: [Optional] Path to a Genius XML domain folder to
+                           load the domain and utility functions from instead
+                           of generating them randomly.
+            n_steps: Maximum number of negotiation rounds (steps), or `None`.
+            time_limit: Maximum real time for the negotiation, or `None`.
+            own_utility_uncertainty: The elicitor's uncertainty level (used
+                                     to build the `IPUtilityFunction` prior
+                                     from the true utility function).
+            own_uncertainty_variablility: Variability of the elicitor's
+                                          uncertainty across outcomes.
+            own_reserved_value: The elicitor's real reserved value.
+            own_base_agent: The negotiator type to use as the elicitor's
+                            `base_negotiator` (e.g. `"aspiration"`).
+            opponent_model_uncertainty: Uncertainty level of the
+                                        `UncertainOpponentModel` built for
+                                        the elicitor.
+            opponent_model_adaptive: If `True`, the opponent model adapts
+                                     based on observed opponent behavior.
+            opponent_proposes: If `True`, the opponent negotiator can propose
+                               (not just accept/reject).
+            opponent_type: The type of negotiator to use for the opponent
+                           (see `create_negotiator`), e.g. `"best_only"`,
+                           `"tough"`, `"random"`, `"aspiration..."`.
+            opponent_toughness: Toughness parameter used both for the
+                                opponent negotiator and (when generating
+                                non-random utilities) as the conflict level.
+            opponent_reserved_value: The opponent's real reserved value.
 
         Returns:
-            dict[str, Any]: The result.
+            A `dict` of configuration values (`priors`, `true_utilities`,
+            `elicitor_reserved_value`, `cost`, `opp_utility`,
+            `opponent_model`, `opponent`, `base_agent`, `n_steps`,
+            `time_limit`) ready to be passed to `SAOElicitingMechanism.__init__`.
         """
         config = {}
         if n_steps is None and time_limit is None and "aspiration" in opponent_type:
@@ -495,7 +582,7 @@ class SAOElicitingMechanism(SAOMechanism):
             ).to_single_issue(numeric=True)
             domain = d.make_session(time_limit=120)
 
-            n_outcomes = domain.nmi.n_outcomes  # type: ignore
+            n_outcomes = domain.shared_nmi.n_outcomes  # type: ignore
             outcomes = domain.outcomes
             elicitor_indx = 0 + int(random.random() <= 0.5)
             opponent_indx = 1 - elicitor_indx
@@ -521,9 +608,9 @@ class SAOElicitingMechanism(SAOMechanism):
                 outcomes=outcomes,
                 n_steps=n_steps,
                 time_limit=time_limit,
-                max_n_agents=2,
+                max_n_negotiators=2,
                 dynamic_entry=False,
-                cache_outcomes=True,
+
             )
 
         true_utilities = list(preferences.mapping.values())
@@ -533,7 +620,7 @@ class SAOElicitingMechanism(SAOMechanism):
             variability=own_uncertainty_variablility,
         )
 
-        outcomes = domain.nmi.outcomes
+        outcomes = domain.shared_nmi.outcomes
 
         opponent = create_negotiator(
             negotiator_type=opponent_type,
@@ -596,16 +683,19 @@ class SAOElicitingMechanism(SAOMechanism):
         self.logger.error(s.strip())
 
     def step(self) -> SAOState:
-        """Step.
+        """Advances the negotiation by one round, timing the call and
+        logging the proposer and offer made in this step.
 
         Returns:
-            SAOState: The result.
+            The `SAOState` after the step (as returned by the parent
+            `SAOMechanism.step`).
         """
         start = time.perf_counter()
         _ = super().step()
         self.total_time += time.perf_counter() - start
+        state = self.state
         self.loginfo(
-            f"[{self._step}] {self._current_proposer} offered {self._current_offer}"
+            f"[{state.step}] {state.current_proposer} offered {state.current_offer}"
         )
         return _
 

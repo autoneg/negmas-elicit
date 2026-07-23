@@ -35,29 +35,43 @@ pip install -e .
 ## Quick Start
 
 ```python
-from negmas import MappingUtilityFunction
-from negmas.outcomes import make_issue
-from negmas_elicit import (
-    User,
-    PandoraElicitor,
-    SAOElicitingMechanism,
+from negmas_elicit import SAOElicitingMechanism
+
+# Generate a random-but-controlled negotiation scenario, then plug in an elicitor.
+config = SAOElicitingMechanism.generate_config(
+    cost=0.02,                    # what the user charges per query
+    n_outcomes=10,
+    n_steps=100,
+    conflict=1.0,
+    own_utility_uncertainty=0.2,  # how uncertain the elicitor's prior ufun is
+    own_reserved_value=0.1,
+    opponent_type="limited_outcomes",
 )
-
-# Define the negotiation issues
-issues = [make_issue(10, "price"), make_issue(5, "quality")]
-
-# Create a user with a known utility function
-ufun = MappingUtilityFunction(
-    mapping=lambda o: o[0] / 10 + o[1] / 5,
-    issues=issues,
+mech = SAOElicitingMechanism(
+    **config, elicitor_type="voi", elicitation_strategy="bisection"
 )
-user = User(ufun=ufun, cost=0.1)
+mech.run()
 
-# Create an elicitor
-elicitor = PandoraElicitor(user=user)
+s = mech.elicitation_state
+print("agreement:", s["agreement"])
+print("elicitor utility:", round(s["elicitor_utility"], 3))
+print("elicitation cost:", round(s["elicitation_cost"], 3))
+print("queries asked:", s["n_queries"])
+```
 
-# Use in a mechanism or standalone elicitation
-# ...
+See the [documentation](https://yasserfarouk.github.io/negmas-elicit/) for a
+guided tour, a manual `User` + `EStrategy` + elicitor example, and the full API.
+
+## Command-line evaluations
+
+Installing the package provides a `negmas-elicit` command for reproducing the
+paper-style experiments (sweeping elicitors and reporting utility, elicitation
+cost, number of queries and Pareto distance):
+
+```bash
+negmas-elicit list                                   # available elicitors & strategies
+negmas-elicit run --elicitor voi --n-outcomes 10     # a single session
+negmas-elicit evaluate --repetitions 20 --out out.csv  # compare all elicitors
 ```
 
 ## Available Elicitors
@@ -137,7 +151,7 @@ Full documentation is available at [https://yasserfarouk.github.io/negmas-elicit
 ## Requirements
 
 - Python 3.12+
-- negmas >= 0.10.0
+- negmas >= 0.15.2
 
 ## License
 

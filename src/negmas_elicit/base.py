@@ -9,7 +9,7 @@ from collections.abc import Callable
 
 import numpy as np
 from negmas.common import MechanismState, NegotiatorMechanismInterface, Value
-from negmas.helpers.prob import ScipyDistribution
+from negmas.helpers.prob import UNIFORM, ScipyDistribution
 from negmas.models.acceptance import (
     AdaptiveDiscreteAcceptanceModel,
     DiscreteAcceptanceModel,
@@ -27,7 +27,21 @@ __all__ = ["BaseElicitor"]
 
 
 class BaseElicitor(SAONegotiator):
-    """BaseElicitor implementation."""
+    """Abstract base class (ABC) for all preference-elicitation negotiators.
+
+    An elicitor wraps a `base_negotiator` and a `User` holding the real
+    (possibly uncertain) utility function. During the negotiation, whenever
+    it needs to propose or respond, it may spend some of its (possibly
+    limited) budget to ask the `User` questions about the true utility of
+    some outcomes (through an `EStrategy`), narrowing down its uncertainty
+    about the negotiator's own preferences before delegating the actual
+    proposal/response decision to `base_negotiator`.
+
+    Concrete subclasses (e.g. `BasePandoraElicitor` and `BaseVOIElicitor`)
+    implement specific algorithms that decide *when* to elicit, *what*
+    outcome to elicit next, and *when to stop* trying to reduce uncertainty
+    given its cost.
+    """
 
     def accuracy_limit(self, cost: float) -> float:
         """The accuracy limit given the cost and `epsilon`."""
@@ -146,7 +160,7 @@ class BaseElicitor(SAONegotiator):
             self.base_negotiator.opponent_model = self.opponent_model
         if preferences is None:
             dists = [
-                ScipyDistribution(type="uniform", loc=0.0, scale=1.0) for _ in outcomes
+                ScipyDistribution(type=UNIFORM, loc=0.0, scale=1.0) for _ in outcomes
             ]
             preferences = IPUtilityFunction(
                 outcomes=outcomes, distributions=dists, reserved_value=0.0
@@ -197,6 +211,7 @@ class BaseElicitor(SAONegotiator):
             preferences=MappingUtilityFunction(
                 mapping=lambda x: self.expect(self.preferences(x), state=state),
                 reserved_value=float("-inf"),
+                outcome_space=nmi.outcome_space,
             ),
         )
         return True
@@ -457,13 +472,14 @@ class BaseElicitor(SAONegotiator):
                 best, best_utility, bsf = outcome, utilitiy, expected_utility
         return best, self.expect(best_utility, state=state)
 
-    def respond_(self, state: MechanismState, offer: Outcome) -> ResponseType:
+    def respond(self, state: MechanismState, source: str | None = None) -> ResponseType:
         """
-        Called by the mechanism directly (through `counter` ) to respond to offers.
+        Called by the mechanism (through `respond_`) to respond to offers.
 
         Args:
-            state: mechanism state
-            offer: the offer to respond to
+            state: mechanism state. The offer being responded to is available as
+                   ``state.current_offer``.
+            source: the id of the negotiator that made the offer (may be ``None``).
 
         Remarks:
             - Does the following steps:
@@ -486,9 +502,10 @@ class BaseElicitor(SAONegotiator):
                 7. Otherwise, call bhe base negotiator to respond.
 
         """
+        offer = state.current_offer
         my_offer, meu = self.best_offer(state=state)
         if my_offer is None:
-            return self.base_negotiator.respond_(state=state, offer=offer)
+            return self.base_negotiator.respond(state=state, source=source)
         if (
             self.strategy
             and self.offerable_outcomes is not None
@@ -497,7 +514,7 @@ class BaseElicitor(SAONegotiator):
             self.strategy.apply(user=self.user, outcome=offer)
         offered_utility = self.preferences(offer)
         if offered_utility is None:
-            return self.base_negotiator.respond_(state=state, offer=offer)
+            return self.base_negotiator.respond(state=state, source=source)
         offered_utility = self.expect(offered_utility, state=state)
         if (
             self.maximum_attainable_utility() - self.user.total_cost
@@ -507,7 +524,7 @@ class BaseElicitor(SAONegotiator):
         if meu < offered_utility:
             return ResponseType.ACCEPT_OFFER
         else:
-            return self.base_negotiator.respond_(state=state, offer=offer)
+            return self.base_negotiator.respond(state=state, source=source)
 
     @abstractmethod
     def can_elicit(self) -> bool:
@@ -567,14 +584,18 @@ class BaseElicitor(SAONegotiator):
         ]
 
     def __getattr__(self, item):
-        """getattr  .
+        """Delegates any attribute not found on this elicitor to `base_negotiator`.
+
+        This allows an elicitor to transparently expose the base negotiator's
+        attributes/methods (e.g. negotiator-specific parameters) as if they
+        were its own.
 
         Args:
-            item: Item.
+            item: Name of the attribute being looked up.
         """
         return getattr(self.base_negotiator, item)
         # TODO extend this to take the partner_id as a parameter to handle multiparty negotiation
 
     def __str__(self):
-        """str  ."""
+        """Returns the negotiator's name."""
         return f"{self.name}"

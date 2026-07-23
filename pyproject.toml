@@ -32,6 +32,9 @@ dependencies = [
     "sortedcontainers>=2.4.0",
 ]
 
+[project.scripts]
+negmas-elicit = "negmas_elicit.cli:main"
+
 [project.urls]
 Homepage = "https://github.com/yasserfarouk/negmas-elicit"
 Documentation = "https://yasserfarouk.github.io/negmas-elicit"
@@ -75,3 +78,6 @@ addopts = "-v --tb=short"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/negmas_elicit"]
+
+[tool.uv.sources]
+negmas = { path = "../negmas", editable = true }

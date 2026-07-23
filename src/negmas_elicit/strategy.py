@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from negmas.common import NegotiatorMechanismInterface, Value
-from negmas.helpers.prob import ScipyDistribution
+from negmas.helpers.prob import UNIFORM, ScipyDistribution
 from negmas.outcomes import Outcome
 from negmas.preferences import IPUtilityFunction
 
@@ -19,7 +19,15 @@ __all__ = ["EStrategy"]
 
 
 class EStrategy:
-    """A proxy for a user that have some true utilities which can be elicited.
+    """An elicitation (deep-elicitation) strategy for narrowing down the
+    uncertainty range of an outcome's utility by repeatedly asking the `User`
+    range/comparison queries.
+
+    It keeps track of a current `[lower, upper]` uncertainty range for every
+    outcome and, given a strategy name, generates the next `Query` to ask
+    (e.g. bisection, titration or ping-pong) and updates the range based on
+    the user's answer, until the range is narrow enough (below `resolution`)
+    or asking is no longer worth the elicitation cost.
 
     Args:
 
@@ -39,12 +47,19 @@ class EStrategy:
     def __init__(
         self, strategy: str, resolution=1e-4, stop_at_cost: bool = True
     ) -> None:
-        """Initialize the instance.
+        """Creates an elicitation strategy.
 
         Args:
-            strategy: Strategy.
-            resolution: Resolution.
-            stop_at_cost: Stop at cost.
+            strategy: The name of the elicitation strategy to use (see
+                      `supported_strategies`) or a callable implementing a
+                      custom strategy (see class Remarks).
+            resolution: The smallest uncertainty range (`upper - lower`)
+                        allowed before elicitation of an outcome's utility
+                        stops and an exact (float) value is returned.
+            stop_at_cost: If `True`, elicitation of an outcome stops once the
+                          current uncertainty range becomes smaller than twice
+                          the user's cost of asking (i.e. it is not worth
+                          asking more questions given their cost).
         """
         super().__init__()
         self.lower = None
@@ -57,7 +72,24 @@ class EStrategy:
 
     @classmethod
     def supported_strategies(cls):
-        """Supported strategies."""
+        """Returns the list of built-in strategy name patterns understood by
+        `next_query`.
+
+        Remarks:
+            - `"exact"`: asks the user directly for the exact utility value
+              (no range narrowing).
+            - `"bisection"`: repeatedly splits the current range in half.
+            - `"titration{f}"`/`"titration-{f}"`/`"dtitration{f}"`/`"dtitration-{f}"`:
+              moves the lower (or upper, with `-`) bound by a fixed step `f`
+              on every query; the `d` variants shrink the step once it would
+              exceed the remaining range.
+            - `"pingpong{f}"`/`"pingpong-{f}"`/`"dpingpong{f}"`/`"dpingpong-{f}"`:
+              like titration but alternates moving the lower and upper bounds
+              by step `f` on successive queries.
+
+            In all step-based patterns, `{f}` is an optional numeric suffix
+            for the step size; if omitted, `resolution` is used as the step.
+        """
         return [
             "exact",
             "titration{f}",
@@ -72,13 +104,16 @@ class EStrategy:
         ]
 
     def next_query(self, outcome: Outcome) -> Query | None:
-        """Next query.
+        """Builds the next `Query` to ask the user to narrow the utility
+        range of `outcome`, according to `self.strategy`.
 
         Args:
-            outcome: Outcome to evaluate.
+            outcome: The outcome whose utility uncertainty is to be narrowed.
 
         Returns:
-            Query | None: The result.
+            The next `Query` to ask, or `None` if no more elicitation is
+            needed/possible for this outcome (e.g. the range is already
+            narrower than `resolution`, or the strategy is `"exact"`/`None`).
         """
         lower, upper, _outcomes = self.lower, self.upper, self.outcomes
         index = self.indices[outcome]
@@ -258,7 +293,7 @@ class EStrategy:
             reply = user.ask(query)
             if reply is None or reply.answer is None:
                 return (
-                    ScipyDistribution(type="uniform", loc=lower, scale=upper - lower),
+                    ScipyDistribution(type=UNIFORM, loc=lower, scale=upper - lower),
                     None,
                 )
             lower_new, upper_new = (
@@ -274,7 +309,7 @@ class EStrategy:
         elif abs(upper - lower) < epsilon or query is None:
             u = (upper + lower) / 2
         else:
-            u = ScipyDistribution(type="uniform", loc=lower, scale=upper - lower)
+            u = ScipyDistribution(type=UNIFORM, loc=lower, scale=upper - lower)
         return u, reply
 
     def utility_estimate(self, outcome: Outcome) -> Value:
@@ -283,18 +318,26 @@ class EStrategy:
         scale = self.upper[indx] - self.lower[indx]
         if scale < self.resolution:
             return self.lower[indx]
-        return ScipyDistribution(type="uniform", loc=self.lower[indx], scale=scale)
+        return ScipyDistribution(type=UNIFORM, loc=self.lower[indx], scale=scale)
 
     def until(self, outcome: Outcome, user: User, dist: list[Value] | Value) -> Value:
-        """Until.
+        """Repeatedly applies the elicitation strategy to `outcome` (asking
+        `user` questions and paying their cost) until the current utility
+        estimate falls within `resolution` of one of the given target
+        value(s)/distribution(s), or an exact value is obtained.
 
         Args:
-            outcome: Outcome to evaluate.
-            user: User.
-            dist: Dist.
+            outcome: The outcome to elicit.
+            user: The `User` to ask.
+            dist: A target `Value` (or list of target `Value`s) that
+                  elicitation is trying to confirm/reach. Each target may be
+                  a `float` (interpreted as a narrow interval around it of
+                  width `2 * resolution`) or a `Value` distribution
+                  (interpreted as its `[loc, loc + scale]` interval).
 
         Returns:
-            Value: The result.
+            The final elicited utility estimate for `outcome` (a `float` if
+            an exact value was found, otherwise a `Value` distribution).
         """
         if isinstance(dist, list):
             targets = [
@@ -313,12 +356,9 @@ class EStrategy:
         u = self.utility_estimate(outcome)
 
         def within_a_target(u, targets=targets):
-            """Within a target.
-
-            Args:
-                u: U.
-                targets: Targets.
-            """
+            """Returns True if the current utility estimate `u` (allowing for
+            `resolution` slack) lies fully within any one of the `targets`
+            intervals."""
             for lower, upper in targets:
                 if (_loc(u) >= (lower - self.resolution)) and (
                     (_upper(u)) <= upper + self.resolution
@@ -335,11 +375,16 @@ class EStrategy:
     def on_enter(
         self, nmi: NegotiatorMechanismInterface, preferences: IPUtilityFunction = None
     ) -> None:
-        """On enter.
+        """Initializes the strategy's internal state (per-outcome lower/upper
+        bounds) when it starts being used in a negotiation.
 
         Args:
-            nmi: Nmi.
-            preferences: Preferences.
+            nmi: The `NegotiatorMechanismInterface` of the negotiation this
+                 strategy will be used in. Used to get the outcome space.
+            preferences: [Optional] The initial (probabilistic) utility
+                         function. If given, its per-outcome distributions
+                         are used to initialize the lower/upper bounds
+                         instead of the default `[0, 1]`.
         """
         self.lower = [0.0] * nmi.n_outcomes
         self.upper = [1.0] * nmi.n_outcomes

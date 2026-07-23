@@ -28,10 +28,13 @@ class Expector(ABC):
     """
 
     def __init__(self, nmi: NegotiatorMechanismInterface | None = None):
-        """Initialize the instance.
+        """Creates an expector.
 
         Args:
-            nmi: Nmi.
+            nmi: [Optional] The `NegotiatorMechanismInterface` of the current
+                 negotiation. Used by expectors that need the negotiation
+                 state (e.g. relative time) when it is not passed explicitly
+                 to `__call__`.
         """
         self.nmi = nmi
 
@@ -42,111 +45,133 @@ class Expector(ABC):
 
     @abstractmethod
     def __call__(self, u: Value, state: MechanismState = None) -> float:
-        """Make instance callable.
+        """Reduces a (possibly probabilistic) utility value to a real number.
 
         Args:
-            u: U.
-            state: Current state.
+            u: The utility value to reduce. May be a `float` (returned as
+               is) or a `Value` distribution.
+            state: [Optional] The current mechanism state, needed by
+                   expectors whose result depends on the negotiation's
+                   progress (e.g. relative time).
 
         Returns:
-            float: The result.
+            The reduced real-valued utility estimate.
         """
         ...
 
 
 class StaticExpector(Expector):
-    """StaticExpector implementation."""
+    """An `Expector` whose reduction of a utility distribution to a real
+    number does not depend on the negotiation state (e.g. relative time)."""
 
     def is_dependent_on_negotiation_info(self) -> bool:
-        """Check if dependent on negotiation info.
+        """Always `False` for static expectors.
 
         Returns:
-            bool: The result.
+            `False`.
         """
         return False
 
     @abstractmethod
     def __call__(self, u: Value, state: MechanismState = None) -> float:
-        """Make instance callable.
+        """Reduces a (possibly probabilistic) utility value to a real number
+        independently of the negotiation state.
 
         Args:
-            u: U.
-            state: Current state.
+            u: The utility value to reduce.
+            state: Ignored (kept for interface compatibility).
 
         Returns:
-            float: The result.
+            The reduced real-valued utility estimate.
         """
         ...
 
 
 class MeanExpector(StaticExpector):
-    """MeanExpector implementation."""
+    """Reduces a utility value to its mean (expected value)."""
 
     def __call__(self, u: Value, state: MechanismState = None) -> float:
-        """Make instance callable.
+        """Returns the mean of `u`: `u` itself if it is already a `float`,
+        or `float(u)` (the distribution's mean) otherwise.
 
         Args:
-            u: U.
-            state: Current state.
+            u: The utility value to reduce.
+            state: Ignored.
 
         Returns:
-            float: The result.
+            The mean utility estimate.
         """
         return u if isinstance(u, float) else float(u)
 
 
 class MaxExpector(StaticExpector):
-    """MaxExpector implementation."""
+    """Reduces a utility value to its maximum (upper bound), representing an
+    optimistic estimate."""
 
     def __call__(self, u: Value, state: MechanismState = None) -> float:
-        """Make instance callable.
+        """Returns the upper bound of `u`: `u` itself if it is already a
+        `float`, or `u.loc + u.scale` otherwise.
 
         Args:
-            u: U.
-            state: Current state.
+            u: The utility value to reduce.
+            state: Ignored.
 
         Returns:
-            float: The result.
+            The maximum (upper-bound) utility estimate.
         """
         return u if isinstance(u, float) else u.loc + u.scale
 
 
 class MinExpector(StaticExpector):
-    """MinExpector implementation."""
+    """Reduces a utility value to its minimum (lower bound), representing a
+    pessimistic estimate."""
 
     def __call__(self, u: Value, state: MechanismState = None) -> float:
-        """Make instance callable.
+        """Returns the lower bound of `u`: `u` itself if it is already a
+        `float`, or `u.loc` otherwise.
 
         Args:
-            u: U.
-            state: Current state.
+            u: The utility value to reduce.
+            state: Ignored.
 
         Returns:
-            float: The result.
+            The minimum (lower-bound) utility estimate.
         """
         return u if isinstance(u, float) else u.loc
 
 
 class BalancedExpector(Expector):
-    """BalancedExpector implementation."""
+    """Reduces a utility value by linearly interpolating between its lower
+    and upper bounds based on the negotiation's relative time.
+
+    Early in the negotiation (`relative_time` close to 0) it behaves
+    optimistically (close to the upper bound); as the negotiation progresses
+    towards its end (`relative_time` close to 1) it becomes pessimistic
+    (close to the lower bound). This mirrors a negotiator that starts tough
+    and concedes over time.
+    """
 
     def is_dependent_on_negotiation_info(self) -> bool:
-        """Check if dependent on negotiation info.
+        """Always `True` since the result depends on relative time.
 
         Returns:
-            bool: The result.
+            `True`.
         """
         return True
 
     def __call__(self, u: Value, state: MechanismState = None) -> float:
-        """Make instance callable.
+        r"""Computes :math:`t \cdot loc + (1-t) \cdot (loc + scale)` where
+        :math:`t` is `state.relative_time` (or `self.nmi.state` if `state`
+        is `None`).
 
         Args:
-            u: U.
-            state: Current state.
+            u: The utility value to reduce.
+            state: [Optional] The current mechanism state. If `None`, uses
+                   `self.nmi.state`.
 
         Returns:
-            float: The result.
+            The time-balanced utility estimate (`u` itself if it is already
+            a `float`).
         """
         if state is None:
             state = self.nmi.state
@@ -159,7 +184,15 @@ class BalancedExpector(Expector):
 
 
 class AspiringExpector(Expector):
-    """AspiringExpector implementation."""
+    """Reduces a utility value by interpolating between its lower and upper
+    bounds using an aspiration curve (`PolyAspiration`) instead of a plain
+    linear interpolation with relative time.
+
+    This allows expressing different concession profiles (e.g. boulware,
+    conceder, linear) for how quickly the estimate moves from optimistic
+    (upper bound) towards pessimistic (lower bound) as the negotiation
+    progresses.
+    """
 
     def __init__(
         self,
@@ -169,41 +202,55 @@ class AspiringExpector(Expector):
             Literal["linear"] | Literal["conceder"] | Literal["boulware"] | float
         ) = "linear",
     ):
-        """Initialize the instance.
+        """Creates an aspiration-based expector.
 
         Args:
-            nmi: Nmi.
-            max_aspiration: Max aspiration.
-            aspiration_type: Aspiration type.
+            nmi: [Optional] The `NegotiatorMechanismInterface` of the current
+                 negotiation, used to get the state when it is not passed
+                 explicitly to `__call__`.
+            max_aspiration: The aspiration level at the start of the
+                            negotiation (relative time 0), between 0 and 1.
+            aspiration_type: The shape of the aspiration (concession) curve:
+                             `"boulware"` (concedes slowly then fast),
+                             `"linear"`, `"conceder"` (concedes fast then
+                             slowly), or a numeric exponent.
         """
         Expector.__init__(self, nmi=nmi)
         self.__asp = PolyAspiration(max_aspiration, aspiration_type)
 
     def utility_at(self, x):
-        """Utility at.
+        """Returns the aspiration level (in `[0, 1]`) at relative time `x`.
 
         Args:
-            x: X.
+            x: The relative time (between 0 and 1) at which to evaluate the
+               aspiration curve.
+
+        Returns:
+            The aspiration level at `x`.
         """
         return self.__asp.utility_at(x)
 
     def is_dependent_on_negotiation_info(self) -> bool:
-        """Check if dependent on negotiation info.
+        """Always `True` since the result depends on relative time.
 
         Returns:
-            bool: The result.
+            `True`.
         """
         return True
 
     def __call__(self, u: Value, state: MechanismState = None) -> float:
-        """Make instance callable.
+        r"""Computes :math:`\alpha \cdot loc + (1-\alpha) \cdot (loc + scale)`
+        where :math:`\alpha` is the aspiration level at `state.relative_time`
+        (or `self.nmi.state` if `state` is `None`).
 
         Args:
-            u: U.
-            state: Current state.
+            u: The utility value to reduce.
+            state: [Optional] The current mechanism state. If `None`, uses
+                   `self.nmi.state`.
 
         Returns:
-            float: The result.
+            The aspiration-weighted utility estimate (`u` itself if it is
+            already a `float`).
         """
         if state is None:
             state = self.nmi.state

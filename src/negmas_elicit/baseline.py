@@ -29,41 +29,49 @@ class DummyElicitor(BaseElicitor):
     """
 
     def utility_on_rejection(self, outcome: Outcome, state: MechanismState) -> Value:
-        """Utility on rejection.
+        """Estimated utility if `outcome` is rejected, always the reserved
+        value since this elicitor does not model the opponent's rejections.
 
         Args:
-            outcome: Outcome to evaluate.
-            state: Current state.
+            outcome: Outcome to evaluate (unused).
+            state: Current mechanism state (unused).
 
         Returns:
-            Value: The result.
+            `self.reserved_value`.
         """
         return self.reserved_value
 
     def can_elicit(self) -> bool:
-        """Can elicit.
+        """Always `True` (kept only to satisfy the abstract interface; no
+        elicitation is actually performed by this baseline).
 
         Returns:
-            bool: The result.
+            `True`.
         """
         return True
 
     def elicit_single(self, state: MechanismState):
-        """Elicit single.
+        """Does nothing since this baseline never elicits.
 
         Args:
-            state: Current state.
+            state: Current mechanism state (unused).
+
+        Returns:
+            `False`, indicating no elicitation act was performed.
         """
         return False
 
     def init_elicitation(
         self, preferences: IPUtilityFunction | ScipyDistribution | None, **kwargs
     ):
-        """Init elicitation.
+        """Initializes elicitation using the given prior `preferences`
+        unchanged (no elicitation is done) and marks every outcome as
+        immediately offerable.
 
         Args:
-            preferences: Preferences.
-            **kwargs: Additional keyword arguments.
+            preferences: The (uncertain) prior utility function to use as is.
+            **kwargs: Additional keyword arguments passed to the parent's
+                      `init_elicitation`.
         """
         super().init_elicitation(preferences=preferences, **kwargs)
         strt_time = time.perf_counter()
@@ -86,41 +94,49 @@ class FullKnowledgeElicitor(BaseElicitor):
     """
 
     def utility_on_rejection(self, outcome: Outcome, state: MechanismState) -> Value:
-        """Utility on rejection.
+        """Estimated utility if `outcome` is rejected, always the reserved
+        value since this elicitor does not model the opponent's rejections.
 
         Args:
-            outcome: Outcome to evaluate.
-            state: Current state.
+            outcome: Outcome to evaluate (unused).
+            state: Current mechanism state (unused).
 
         Returns:
-            Value: The result.
+            `self.reserved_value`.
         """
         return self.reserved_value
 
     def can_elicit(self) -> bool:
-        """Can elicit.
+        """Always `True` (kept only to satisfy the abstract interface; no
+        elicitation is actually performed by this baseline).
 
         Returns:
-            bool: The result.
+            `True`.
         """
         return True
 
     def elicit_single(self, state: MechanismState):
-        """Elicit single.
+        """Does nothing since this baseline never elicits.
 
         Args:
-            state: Current state.
+            state: Current mechanism state (unused).
+
+        Returns:
+            `False`, indicating no elicitation act was performed.
         """
         return False
 
     def init_elicitation(
         self, preferences: IPUtilityFunction | ScipyDistribution | None, **kwargs
     ):
-        """Init elicitation.
+        """Initializes elicitation using the user's true `ufun` directly
+        (ignoring the `preferences` argument), so no uncertainty ever exists
+        and no elicitation is done. Every outcome is marked as immediately
+        offerable.
 
         Args:
-            preferences: Preferences.
-            **kwargs: Additional keyword arguments.
+            preferences: Ignored; the user's real `ufun` is used instead.
+            **kwargs: Ignored.
         """
         super().init_elicitation(preferences=self.user.ufun)
         strt_time = time.perf_counter()

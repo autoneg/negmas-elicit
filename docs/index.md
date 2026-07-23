@@ -1,36 +1,61 @@
 # negmas-elicit
 
-**Preference elicitation module for automated negotiation**
+**Preference elicitation for automated negotiation.**
 
-`negmas-elicit` provides algorithms and tools for eliciting user preferences during automated negotiations. It was extracted from the [NegMAS](https://github.com/yasserfarouk/negmas) library to provide a focused, lightweight package for preference elicitation research and applications.
+`negmas-elicit` provides algorithms and tools for eliciting a user's preferences
+*during* an automated negotiation, when querying the user is costly and the
+negotiator must trade off the value of extra information against its cost. It was
+extracted from the [NegMAS](https://github.com/yasserfarouk/negmas) library into a
+focused, standalone package.
+
+The package implements the elicitation algorithms from a line of research on
+value-of-information based elicitation:
+
+| Family | Algorithm | Reference |
+|--------|-----------|-----------|
+| Pandora's Box | `PandoraElicitor`, `OptimalIncrementalElicitor`, ... | Baarslag & Gerding, *IJCAI 2015* |
+| Value of Information | `VOIElicitor` (OQA) | Baarslag & Kaisers, *AAMAS 2017* |
+| Fast VOI | `VOIFastElicitor` | Mohammad & Nakadai, *PRIMA 2018* |
+| Optimal VOI | `VOIOptimalElicitor` | Mohammad & Nakadai, *AAMAS 2019* |
 
 ## Features
 
-- **Multiple Elicitation Strategies**: Pandora-based elicitors, VOI (Value of Information) elicitors, and baseline approaches
-- **Query Types**: Support for comparison, ranking, range, and marginal neutrality queries
-- **User Modeling**: Flexible user models with configurable accuracy and response costs
-- **Expector Functions**: Various strategies for estimating expected utility values
-- **Integration with NegMAS**: Seamlessly works with NegMAS negotiation mechanisms
+- **Many elicitors** — Pandora's-box elicitors, value-of-information (VOI) elicitors,
+  and baselines (`DummyElicitor`, `FullKnowledgeElicitor`).
+- **Query types** — range, comparison, ranking and marginal-neutrality constraints.
+- **User modeling** — a `User` that answers queries with a configurable per-query cost.
+- **Deep-elicitation strategies** — `EStrategy` (`bisection`, `titration`, `pingpong`, ...).
+- **A ready-to-run mechanism** — `SAOElicitingMechanism` that plugs an elicitor into a
+  standard alternating-offers negotiation and records rich per-session metrics.
+- **A CLI** — `negmas-elicit` for running single sessions and full evaluation sweeps.
 
-## Quick Example
+## Quick example
 
 ```python
-from negmas import make_issue, SAOMechanism
-from negmas_elicit import SAOElicitingMechanism, PandoraElicitor, User
+from negmas_elicit import SAOElicitingMechanism
 
-# Create a simple negotiation scenario
-issues = [make_issue(name="price", values=10)]
-mechanism = SAOElicitingMechanism(issues=issues, n_steps=100)
+# Generate a random negotiation scenario (utilities, opponent, priors, ...)
+config = SAOElicitingMechanism.generate_config(
+    cost=0.02,                    # what the user charges per query
+    n_outcomes=10,
+    n_steps=100,
+    conflict=1.0,                 # how opposed the two ufuns are (0..1)
+    own_utility_uncertainty=0.2,  # how uncertain the elicitor's prior ufun is
+    own_reserved_value=0.1,
+    opponent_type="limited_outcomes",
+)
 
-# Create a user with preferences
-user = User(...)
+# Plug a value-of-information elicitor into the negotiation and run it.
+mech = SAOElicitingMechanism(
+    **config, elicitor_type="voi", elicitation_strategy="bisection"
+)
+mech.run()
 
-# Create an eliciting negotiator
-elicitor = PandoraElicitor(user=user)
-
-# Add to mechanism and run
-mechanism.add(elicitor)
-mechanism.run()
+s = mech.elicitation_state
+print("agreement       :", s["agreement"])
+print("elicitor utility:", round(s["elicitor_utility"], 3))
+print("elicitation cost:", round(s["elicitation_cost"], 3))
+print("queries asked   :", s["n_queries"])
 ```
 
 ## Installation
@@ -39,6 +64,10 @@ mechanism.run()
 pip install negmas-elicit
 ```
 
+See [Getting Started](getting-started.md) for a guided tour, [Running Evaluations](evaluations.md)
+for the CLI, [Repository Structure](repository-structure.md) for the layout, and the
+[API Reference](api.md) for details.
+
 ## License
 
-This project is licensed under the AGPL-3.0-or-later license.
+Licensed under the AGPL-3.0-or-later license.
