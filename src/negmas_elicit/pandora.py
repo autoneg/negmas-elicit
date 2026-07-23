@@ -798,23 +798,30 @@ class PandoraElicitor(BasePandoraElicitor):
         # a different (boulware) concession curve than the other elicitors and
         # made the tournament compare concession strategies, not elicitors.
         kwargs.setdefault("base_negotiator", AspirationNegotiator())
-        kwargs.update(
-            dict(
-                opponent_model_factory=lambda x: AdaptiveDiscreteAcceptanceModel.from_negotiation(
-                    nmi=x
-                ),
-                expector_factory=MeanExpector,
-                deep_elicitation=True,
-                single_elicitation_per_round=False,
-                continue_eliciting_past_reserved_val=False,
-                epsilon=0.001,
-                assume_uniform=True,
-                user_model_in_index=True,
-                precalculated_index=False,
-                incremental=True,
-                true_utility_on_zero_cost=False,
-            )
-        )
+        # These are PandoraElicitor's *defaults*, not overrides. Subclasses
+        # (FastElicitor, MeanElicitor, BalancedElicitor, ...) set their own
+        # `deep_elicitation`/`expector_factory`/... before calling super();
+        # using `setdefault` (not `update`) lets those subclass values win.
+        # Previously `kwargs.update(...)` clobbered every subclass override, so
+        # the whole family collapsed to (deep=True, MeanExpector) -- which is
+        # why the tournament rows for pandora/fast/mean/balanced/optimistic/
+        # pessimistic were byte-identical.
+        for _k, _v in dict(
+            opponent_model_factory=lambda x: AdaptiveDiscreteAcceptanceModel.from_negotiation(
+                nmi=x
+            ),
+            expector_factory=MeanExpector,
+            deep_elicitation=True,
+            single_elicitation_per_round=False,
+            continue_eliciting_past_reserved_val=False,
+            epsilon=0.001,
+            assume_uniform=True,
+            user_model_in_index=True,
+            precalculated_index=False,
+            incremental=True,
+            true_utility_on_zero_cost=False,
+        ).items():
+            kwargs.setdefault(_k, _v)
         super().__init__(strategy=strategy, user=user, **kwargs)
 
 
@@ -958,14 +965,18 @@ class AspiringElicitor(OptimalIncrementalElicitor):
             **kwargs: Additional keyword arguments passed to
                       `OptimalIncrementalElicitor.__init__`.
         """
-        kwargs.update(
-            dict(
-                expector_factory=lambda: AspiringExpector(
-                    max_aspiration=max_aspiration,
-                    aspiration_type=aspiration_type,
-                    nmi=self._nmi,
-                )
-            )
+        # `expector_factory` is called as `expector_factory(nmi)` (see
+        # base.py::join), so the lambda must accept the nmi. Previously it took
+        # no args and captured `self._nmi` (None at construction time); it was
+        # never exercised because PandoraElicitor.__init__ used to clobber this
+        # override back to MeanExpector.
+        kwargs.setdefault(
+            "expector_factory",
+            lambda nmi: AspiringExpector(
+                max_aspiration=max_aspiration,
+                aspiration_type=aspiration_type,
+                nmi=nmi,
+            ),
         )
         super().__init__(
             strategy=strategy,
