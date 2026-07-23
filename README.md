@@ -83,7 +83,9 @@ negmas-elicit evaluate --repetitions 20 --out out.csv  # compare all elicitors
 ### Pandora Elicitors
 - `PandoraElicitor`: Standard Pandora's box approach
 - `OptimalIncrementalElicitor`: Optimal incremental elicitation
-- `FastElicitor`: Fast approximation
+- `FastElicitor`: Fast approximation (no deep elicitation)
+- `FullElicitor`: Elicits every outcome up front, then offers
+- `RandomElicitor`: Uses a random index instead of the optimal z-index
 - `MeanElicitor`, `BalancedElicitor`, `AspiringElicitor`: Different expectation strategies
 - `OptimisticElicitor`, `PessimisticElicitor`: Optimistic/pessimistic strategies
 
@@ -100,9 +102,9 @@ The elicitation algorithms implemented in this library are based on the followin
 | Algorithm | Paper |
 |-----------|-------|
 | Pandora's Box | Baarslag, T., & Gerding, E. H. (2015). [Optimal incremental preference elicitation during negotiation](https://www.ijcai.org/Proceedings/15/Papers/008.pdf). IJCAI'15. |
-| VOI / OQA | Baarslag, T., & Kaisers, M. (2017). The Value of Information in Automated Negotiation. AAMAS'17. |
-| FastVOI | Mohammad, Y., & Nakadai, S. (2018). FastVOI: Efficient utility elicitation during negotiations. PRIMA'18. |
-| Optimal VOI | Mohammad, Y., & Nakadai, S. (2019). Optimal Value of Information Based Elicitation During Negotiation. AAMAS'19. |
+| VOI / OQA | Baarslag, T., & Kaisers, M. (2017). [The Value of Information in Automated Negotiation](https://ifaamas.org/Proceedings/aamas2017/pdfs/p391.pdf). AAMAS'17. |
+| FastVOI | Mohammad, Y., & Nakadai, S. (2018). [FastVOI: Efficient utility elicitation during negotiations](https://link.springer.com/chapter/10.1007/978-3-030-03098-8_42). PRIMA'18. |
+| Optimal VOI | Mohammad, Y., & Nakadai, S. (2019). [Optimal Value of Information Based Elicitation During Negotiation](https://www.ifaamas.org/Proceedings/aamas2019/pdfs/p242.pdf). AAMAS'19. |
 
 ### BibTeX
 
@@ -113,7 +115,8 @@ The elicitation algorithms implemented in this library are based on the followin
     booktitle={Proceedings of the 24th International Conference on Artificial Intelligence},
     pages={3--9},
     year={2015},
-    organization={AAAI Press}
+    organization={AAAI Press},
+    url={https://www.ijcai.org/Proceedings/15/Papers/008.pdf}
 }
 
 @inproceedings{baarslag2017value,
@@ -122,7 +125,8 @@ The elicitation algorithms implemented in this library are based on the followin
     booktitle={Proceedings of the 16th Conference on Autonomous Agents and MultiAgent Systems},
     pages={391--400},
     year={2017},
-    organization={IFAAMAS}
+    organization={IFAAMAS},
+    url={https://ifaamas.org/Proceedings/aamas2017/pdfs/p391.pdf}
 }
 
 @inproceedings{mohammad2018fastvoi,
@@ -131,7 +135,9 @@ The elicitation algorithms implemented in this library are based on the followin
     booktitle={International Conference on Principles and Practice of Multi-Agent Systems},
     pages={560--567},
     year={2018},
-    organization={Springer}
+    organization={Springer},
+    doi={10.1007/978-3-030-03098-8_42},
+    url={https://link.springer.com/chapter/10.1007/978-3-030-03098-8_42}
 }
 
 @inproceedings{mohammad2019optimal,
@@ -140,7 +146,8 @@ The elicitation algorithms implemented in this library are based on the followin
     booktitle={Proceedings of the 18th International Conference on Autonomous Agents and MultiAgent Systems},
     pages={242--250},
     year={2019},
-    organization={IFAAMAS}
+    organization={IFAAMAS},
+    url={https://www.ifaamas.org/Proceedings/aamas2019/pdfs/p242.pdf}
 }
 ```
 
@@ -168,7 +175,9 @@ If you use this library in your research, please cite the negmas library:
   booktitle={International Conference on Principles and Practice of Multi-Agent Systems},
   pages={343--351},
   year={2019},
-  organization={Springer}
+  organization={Springer},
+  doi={10.1007/978-3-030-69322-0_23},
+  url={https://link.springer.com/chapter/10.1007/978-3-030-69322-0_23}
 }
 ```
 

@@ -204,7 +204,7 @@ class SAOElicitingMechanism(SAOMechanism):
         elicitation_strategy="pingpong",
         toughness=0.95,
         elicitor_type="balanced",
-        history_file_name: str = None,
+        history_file_name: str | None = None,
         screen_log: bool = False,
         dynamic_queries=True,
         each_outcome_once=False,
@@ -277,7 +277,7 @@ class SAOElicitingMechanism(SAOMechanism):
                                      titration.
             name: [Optional] A name for this mechanism/negotiation.
         """
-        self.elicitation_state = {}
+        self.elicitation_state: dict = {}
         initial_priors = priors
         self.xw_real = priors
 
@@ -494,12 +494,12 @@ class SAOElicitingMechanism(SAOMechanism):
     def generate_config(
         cls,
         cost,
-        n_outcomes: int = None,
+        n_outcomes: int | None = None,
         rand_preferencess=True,
-        conflict: float = None,
-        conflict_delta: float = None,
+        conflict: float | None = None,
+        conflict_delta: float | None = None,
         winwin=None,  # only if rand_preferencess is false
-        genius_folder: str = None,
+        genius_folder: str | None = None,
         n_steps=None,
         time_limit=None,
         own_utility_uncertainty=0.5,
@@ -702,7 +702,7 @@ class SAOElicitingMechanism(SAOMechanism):
         """On negotiation start."""
         if not super().on_negotiation_start():
             return False
-        self.elicitation_state = {}
+        self.elicitation_state: dict = {}
         self.elicitation_state["steps"] = None
         self.elicitation_state["relative_time"] = None
         self.elicitation_state["broken"] = False
@@ -799,7 +799,7 @@ class SAOElicitingMechanism(SAOMechanism):
                     cols=2,
                     column_widths=[0.5, 0.5],
                     specs=[
-                        [{"rowspan": n_agents}, {}] if i == 0 else [None, {}]
+                        [{"rowspan": n_agents}, {}] if i == 0 else [None, {}]  # type: ignore[list-item]
                         for i in range(n_agents)
                     ],
                     subplot_titles=["Utility Space"]
@@ -814,7 +814,7 @@ class SAOElicitingMechanism(SAOMechanism):
                     cols=2,
                     column_widths=[0.5, 0.5],
                     specs=[
-                        [{"rowspan": n_agents}, {}] if i == 0 else [None, {}]
+                        [{"rowspan": n_agents}, {}] if i == 0 else [None, {}]  # type: ignore[list-item]
                         for i in range(n_agents)
                     ],
                     subplot_titles=["Outcome Space"]
@@ -959,7 +959,7 @@ class SAOElicitingMechanism(SAOMechanism):
                         )
 
                     steps = sorted(history.step.unique().tolist())
-                    aoffers = [[], []]
+                    aoffers: list[list] = [[], []]
                     for step in steps[::2]:
                         offrs = []
                         for a in range(n_agents):
@@ -1093,7 +1093,7 @@ class SAOElicitingMechanism(SAOMechanism):
     def on_negotiation_end(self):
         """On negotiation end."""
         super().on_negotiation_end()
-        self.elicitation_state = {}
+        self.elicitation_state: dict = {}
         self.elicitation_state["steps"] = self._step + 1
         self.elicitation_state["relative_time"] = self.relative_time
         self.elicitation_state["broken"] = self.state.broken

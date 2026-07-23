@@ -17,7 +17,7 @@ import time
 from collections.abc import Callable
 from heapq import heapify, heappop
 from math import sqrt
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 
 import numpy as np
 import scipy.optimize as opt
@@ -246,13 +246,12 @@ class BasePandoraElicitor(BaseElicitor):
         )
         self.my_last_proposals: Outcome | None = None
         self.deep_elicitation = deep_elicitation
-        self.elicitation_history = []
-        self.cutoff_utility = None
-        self.opponent_model = None
-        self._elicitation_time = None
-        self.offerable_outcomes = []  # will contain outcomes with known or at least elicited utilities
-        self.cutoff_utility = None
-        self.unknown = None
+        self.elicitation_history: list = []
+        self.cutoff_utility: float = 0.0
+        self.opponent_model: DiscreteAcceptanceModel | None = None
+        self._elicitation_time: float = 0.0
+        self.offerable_outcomes: list[Outcome] = []
+        self.unknown: list[tuple[float, int]] | None = None
         self.assume_uniform = assume_uniform
         self.user_model_in_index = user_model_in_index
         self.precalculated_index = precalculated_index
@@ -523,7 +522,7 @@ class BasePandoraElicitor(BaseElicitor):
         """
         if self.unknown is None:
             self.init_unknowns()
-        return self.unknown and len(self.unknown) != 0
+        return len(self.unknown) > 0
 
     def on_opponent_model_updated(
         self, outcomes: list[Outcome], old: list[float], new: list[float]
@@ -582,7 +581,7 @@ class FullElicitor(BasePandoraElicitor):
             base_negotiator=base_negotiator,
             **kwargs,
         )
-        self.elicited = {}
+        self.elicited = False
 
     def update_best_offer_utility(self, outcome: Outcome, u: Value):
         """Does nothing since `FullElicitor` elicits every outcome at once
@@ -628,7 +627,7 @@ class FullElicitor(BasePandoraElicitor):
             self.elicitation_history = [zip(outcomes, utilities)]
             self.elicited = True
 
-    def init_unknowns(self) -> list[tuple[float, int]]:
+    def init_unknowns(self) -> None:
         """Sets the unknown list to empty since `FullElicitor` elicits all
         outcomes at once in `elicit` instead of maintaining a Weitzman-index
         based unknown list.
@@ -896,7 +895,7 @@ class AspiringElicitor(OptimalIncrementalElicitor):
         user: User,
         *,
         max_aspiration: float = 1.0,
-        aspiration_type: float | str = "linear",
+        aspiration_type: float | Literal["linear", "conceder", "boulware"] = "linear",
         **kwargs,
     ) -> None:
         """Creates an `AspiringElicitor` using an `AspiringExpector` with the

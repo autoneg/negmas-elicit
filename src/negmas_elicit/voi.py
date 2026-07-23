@@ -114,7 +114,7 @@ class BaseVOIElicitor(BaseElicitor):
         user: User,
         *,
         dynamic_query_set=False,
-        queries=None,
+        queries: list[tuple[Outcome | None, Query | None, float | None]] | None = None,
         adaptive_answer_probabilities=True,
         each_outcome_once=False,
         update_related_queries=True,
@@ -130,7 +130,9 @@ class BaseVOIElicitor(BaseElicitor):
         self.adaptive_answer_probabilities = adaptive_answer_probabilities
         self.current_eeu = None
         self.eus = None
-        self.queries = queries if queries is not None else []
+        self.queries: list[tuple[Outcome | None, Query | None, float | None]] = (
+            queries if queries is not None else []
+        )
         self.outcome_in_policy = None
         self.each_outcome_once = each_outcome_once
         self.queries_of_outcome = None
@@ -187,7 +189,7 @@ class BaseVOIElicitor(BaseElicitor):
     def init_elicitation(
         self,
         preferences: IPUtilityFunction | Distribution | None,
-        queries: list[Query] | None = None,
+        queries: list[tuple[Outcome | None, Query | None, float | None]] | None = None,
         **kwargs,
     ) -> None:
         """
@@ -224,9 +226,15 @@ class BaseVOIElicitor(BaseElicitor):
                 "You cannot pass a set of queries if you use dynamic ask sets"
             )
         if not self.dynamic_query_set and queries is not None:
+            assert self.queries is not None
             self.queries += queries
         self.init_optimal_policy()
         if self.dynamic_query_set:
+            assert (
+                self.strategy is not None
+                and nmi is not None
+                and nmi.outcomes is not None
+            )
             self.queries = [
                 (outcome, self.strategy.next_query(outcome), 0.0)
                 for outcome in nmi.outcomes
@@ -379,35 +387,7 @@ class BaseVOIElicitor(BaseElicitor):
         else:
             u = self.user.ask(query)
             newu = u.answer.constraint.marginal(outcome)
-            if self.queries_of_outcome is not None:
-                if _scale(newu) > 1e-7:
-                    newu = newu & oldu
-                    newmin, newmax = newu.loc, newu.scale + newu.loc
-                    good_queries = []
-                    for i, qind in enumerate(self.queries_of_outcome.get(outcome, [])):
-                        _o, _q, _c = self.queries[qind]
-                        if _q is None:
-                            continue
-                        answers = _q.answers
-                        tokeep = []
-                        for j, ans in enumerate(answers):
-                            rng = ans.constraint.range
-                            if newmin == rng[0] and newmax == rng[1]:
-                                continue
-                            if newmin <= rng[0] <= newmax or rng[0] <= newmin <= rng[1]:
-                                tokeep.append(j)
-                        if len(tokeep) < 2:
-                            self.queries[i] = None, None, None
-                            continue
-                        good_queries.append(qind)
-                        if len(tokeep) < len(answers):
-                            ans = _q.answers
-                            self.queries[i].answers = [ans[j] for j in tokeep]
-                    self.queries_of_outcome[outcome] = good_queries
-                else:
-                    for i, _ in enumerate(self.queries_of_outcome.get(outcome, [])):
-                        self.queries[i] = None, None, None
-                        self.queries_of_outcome[outcome] = []
+            newu = self._prune_related_queries(outcome, newu, oldu)
         self.total_voi += -eeu - self.current_eeu
         outcome_index = self.indices[outcome]
         if _scale(newu) < 1e-7:
@@ -1051,7 +1031,7 @@ class VOIOptimalElicitor(BaseElicitor):
     def init_elicitation(
         self,
         preferences: IPUtilityFunction | Distribution | None,
-        queries: list[Query] | None = None,
+        queries: list[tuple[Outcome | None, Query | None, float | None]] | None = None,
     ) -> None:
         """Initializes elicitation: computes the initial optimal offering
         policy and the optimal continuous ("is u(o) > x?") queries and their
@@ -1169,35 +1149,7 @@ class VOIOptimalElicitor(BaseElicitor):
             return False
         u = self.user.ask(query)
         newu = u.answer.constraint.marginal(outcome)
-        if self.queries_of_outcome is not None:
-            if _scale(newu) > 1e-7:
-                newu = newu & oldu
-                newmin, newmax = newu.loc, newu.scale + newu.loc
-                good_queries = []
-                for i, qind in enumerate(self.queries_of_outcome.get(outcome, [])):
-                    _o, _q, _c = self.queries[qind]
-                    if _q is None:
-                        continue
-                    answers = _q.answers
-                    tokeep = []
-                    for j, ans in enumerate(answers):
-                        rng = ans.constraint.range
-                        if newmin == rng[0] and newmax == rng[1]:
-                            continue
-                        if newmin <= rng[0] <= newmax or rng[0] <= newmin <= rng[1]:
-                            tokeep.append(j)
-                    if len(tokeep) < 2:
-                        self.queries[i] = None, None, None
-                        continue
-                    good_queries.append(qind)
-                    if len(tokeep) < len(answers):
-                        ans = _q.answers
-                        self.queries[i].answers = [ans[j] for j in tokeep]
-                self.queries_of_outcome[outcome] = good_queries
-            else:
-                for i, _ in enumerate(self.queries_of_outcome.get(outcome, [])):
-                    self.queries[i] = None, None, None
-                    self.queries_of_outcome[outcome] = []
+        newu = self._prune_related_queries(outcome, newu, oldu)
         self.total_voi += -eeu - self.current_eeu
         outcome_index = self.indices[outcome]
         if _scale(newu) < 1e-7:

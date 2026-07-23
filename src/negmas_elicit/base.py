@@ -18,7 +18,7 @@ from negmas.outcomes import Outcome
 from negmas.preferences import IPUtilityFunction, MappingUtilityFunction, Preferences
 from negmas.sao import AspirationNegotiator, ResponseType, SAONegotiator
 
-from negmas_elicit.common import _locs, _uppers
+from negmas_elicit.common import _locs, _scale, _uppers
 from negmas_elicit.expectors import Expector, MeanExpector
 from negmas_elicit.strategy import EStrategy
 from negmas_elicit.user import User
@@ -108,19 +108,66 @@ class BaseElicitor(SAONegotiator):
         self.continue_eliciting_past_reserved_val = continue_eliciting_past_reserved_val
         self.epsilon = epsilon
         self.true_utility_on_zero_cost = true_utility_on_zero_cost
-        self.elicitation_history = []
-        self.opponent_model = None
-        self._elicitation_time = None
+        self.elicitation_history: list = []
+        self.opponent_model: DiscreteAcceptanceModel | None = None
+        self._elicitation_time: float = 0.0
         self.asking_time = 0.0
-        self.offerable_outcomes = []  # will contain outcomes with known or at least elicited utilities
-        self.indices = None
+        self.offerable_outcomes: list[Outcome] = []
+        self.indices: dict[Outcome, int] | None = None
         self.initial_utility_priors = None
         self.user = user
         self.acc_limit = self.accuracy_limit(self.user.cost_of_asking())
         self.base_negotiator = base_negotiator
-        self.expect = None
+        self.expect: Expector | None = None
         if strategy is not None:
             strategy.resolution = max(self.acc_limit, strategy.resolution)
+
+    def _prune_related_queries(self, outcome: Outcome, newu, oldu):
+        """Update/invalidated queries related to `outcome` after elicitation.
+
+        Given the updated utility distribution `newu` and the prior `oldu`,
+        drop answers of related queries that became irrelevant and invalidate
+        queries that no longer have enough discriminating answers.
+
+        Returns the (possibly narrowed) `newu` distribution; when no related
+        queries are tracked (`queries_of_outcome is None`) `newu` is returned
+        unchanged.
+
+        Args:
+            outcome: The outcome whose utility was just elicited.
+            newu: The posterior utility distribution for `outcome`.
+            oldu: The prior utility distribution for `outcome`.
+        """
+        if self.queries_of_outcome is None:
+            return newu
+        if _scale(newu) > 1e-7:
+            newu = newu & oldu
+            newmin, newmax = newu.loc, newu.scale + newu.loc
+            good_queries = []
+            for qind in self.queries_of_outcome.get(outcome, []):
+                _o, _q, _c = self.queries[qind]
+                if _q is None:
+                    continue
+                answers = _q.answers
+                tokeep = []
+                for j, ans in enumerate(answers):
+                    rng = ans.constraint.range
+                    if newmin == rng[0] and newmax == rng[1]:
+                        continue
+                    if newmin <= rng[0] <= newmax or rng[0] <= newmin <= rng[1]:
+                        tokeep.append(j)
+                if len(tokeep) < 2:
+                    self.queries[qind] = (None, None, None)
+                    continue
+                good_queries.append(qind)
+                if len(tokeep) < len(answers):
+                    _q.answers = [answers[j] for j in tokeep]
+            self.queries_of_outcome[outcome] = good_queries
+        else:
+            for qind in self.queries_of_outcome.get(outcome, []):
+                self.queries[qind] = (None, None, None)
+            self.queries_of_outcome[outcome] = []
+        return newu
 
     def init_elicitation(
         self,
