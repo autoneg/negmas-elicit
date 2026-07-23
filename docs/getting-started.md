@@ -44,11 +44,11 @@ ufun = MappingUtilityFunction(
     {(0,): 0.1, (1,): 0.4, (2,): 0.2, (3,): 0.9, (4,): 0.6},
     reserved_value=0.0,
 )
-user = User(preferences=ufun, cost=0.02)   # 0.02 charged per query
+user = User(preferences=ufun, cost=0.02)  # 0.02 charged per query
 
-user.ufun((3,))        # 0.9  -> the true value
+user.ufun((3,))  # 0.9  -> the true value
 user.cost_of_asking()  # 0.02
-user.total_cost        # 0.0  -> grows as it is queried
+user.total_cost  # 0.0  -> grows as it is queried
 ```
 
 ## Elicitation strategies
@@ -67,7 +67,9 @@ from negmas_elicit import EStrategy, User
 from negmas import MappingUtilityFunction
 
 neg = SAOMechanism(outcomes=[(i,) for i in range(5)], n_steps=20)
-user = User(preferences=MappingUtilityFunction({(i,): 0.1 * i for i in range(5)}), cost=0.02)
+user = User(
+    preferences=MappingUtilityFunction({(i,): 0.1 * i for i in range(5)}), cost=0.02
+)
 
 strategy = EStrategy(strategy="bisection", resolution=1e-3)
 strategy.on_enter(nmi=neg.shared_nmi)
@@ -132,7 +134,9 @@ config = SAOElicitingMechanism.generate_config(
     own_reserved_value=0.1,
     opponent_type="limited_outcomes",
 )
-mech = SAOElicitingMechanism(**config, elicitor_type="voi", elicitation_strategy="bisection")
+mech = SAOElicitingMechanism(
+    **config, elicitor_type="voi", elicitation_strategy="bisection"
+)
 mech.run()
 
 print(mech.elicitation_state["elicitor_utility"], mech.elicitation_state["n_queries"])

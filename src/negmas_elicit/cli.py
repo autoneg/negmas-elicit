@@ -160,8 +160,12 @@ def _add_common_scenario_args(parser: argparse.ArgumentParser) -> None:
     """Add the scenario-defining options shared by ``run`` and ``evaluate``."""
     parser.add_argument("--cost", type=float, default=0.02, help="cost per query")
     parser.add_argument("--n-outcomes", type=int, default=10, help="number of outcomes")
-    parser.add_argument("--n-steps", type=int, default=100, help="max negotiation rounds")
-    parser.add_argument("--conflict", type=float, default=1.0, help="conflict level [0,1]")
+    parser.add_argument(
+        "--n-steps", type=int, default=100, help="max negotiation rounds"
+    )
+    parser.add_argument(
+        "--conflict", type=float, default=1.0, help="conflict level [0,1]"
+    )
     parser.add_argument("--winwin", type=float, default=0.0, help="win-win level [0,1]")
     parser.add_argument(
         "--uncertainty",
@@ -259,7 +263,11 @@ def _cmd_evaluate(args: argparse.Namespace) -> int:
                 print(f"[warn] {elicitor} rep {rep} failed: {e}", file=sys.stderr)
                 continue
             rows.append(
-                {"elicitor": elicitor, "rep": rep, **{m: getattr(result, m) for m in METRICS}}
+                {
+                    "elicitor": elicitor,
+                    "rep": rep,
+                    **{m: getattr(result, m) for m in METRICS},
+                }
             )
 
     if not rows:
@@ -272,12 +280,12 @@ def _cmd_evaluate(args: argparse.Namespace) -> int:
         print(f"Wrote raw per-session results to {args.raw}")
 
     summary = (
-        df.drop(columns=["rep"])
-        .groupby("elicitor", sort=False)
-        .agg(["mean", "std"])
+        df.drop(columns=["rep"]).groupby("elicitor", sort=False).agg(["mean", "std"])
     )
     # keep the requested metric order
-    summary = summary.reindex(columns=[(m, a) for m in METRICS for a in ("mean", "std")])
+    summary = summary.reindex(
+        columns=[(m, a) for m in METRICS for a in ("mean", "std")]
+    )
     pd.set_option("display.width", 200)
     pd.set_option("display.max_columns", 50)
     print(

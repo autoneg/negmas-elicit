@@ -1,4 +1,13 @@
-"""Preference elicitation."""
+"""Pandora's-box preference elicitation.
+
+The elicitors in this module implement the optimal incremental preference
+elicitation algorithm of:
+
+    Baarslag, T., & Gerding, E. H. (2015). Optimal incremental preference
+    elicitation during negotiation. In *Proceedings of the 24th International
+    Joint Conference on Artificial Intelligence (IJCAI'15)*, pp. 3--9.
+    https://www.ijcai.org/Proceedings/15/Papers/008.pdf
+"""
 
 from __future__ import annotations
 

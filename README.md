@@ -39,7 +39,7 @@ from negmas_elicit import SAOElicitingMechanism
 
 # Generate a random-but-controlled negotiation scenario, then plug in an elicitor.
 config = SAOElicitingMechanism.generate_config(
-    cost=0.02,                    # what the user charges per query
+    cost=0.02,  # what the user charges per query
     n_outcomes=10,
     n_steps=100,
     conflict=1.0,
@@ -99,7 +99,7 @@ The elicitation algorithms implemented in this library are based on the followin
 
 | Algorithm | Paper |
 |-----------|-------|
-| Pandora's Box | Baarslag, T., & Gerding, E. H. (2015). Optimal incremental preference elicitation during negotiation. IJCAI'15. |
+| Pandora's Box | Baarslag, T., & Gerding, E. H. (2015). [Optimal incremental preference elicitation during negotiation](https://www.ijcai.org/Proceedings/15/Papers/008.pdf). IJCAI'15. |
 | VOI / OQA | Baarslag, T., & Kaisers, M. (2017). The Value of Information in Automated Negotiation. AAMAS'17. |
 | FastVOI | Mohammad, Y., & Nakadai, S. (2018). FastVOI: Efficient utility elicitation during negotiations. PRIMA'18. |
 | Optimal VOI | Mohammad, Y., & Nakadai, S. (2019). Optimal Value of Information Based Elicitation During Negotiation. AAMAS'19. |

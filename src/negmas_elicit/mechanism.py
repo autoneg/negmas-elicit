@@ -610,7 +610,6 @@ class SAOElicitingMechanism(SAOMechanism):
                 time_limit=time_limit,
                 max_n_negotiators=2,
                 dynamic_entry=False,
-
             )
 
         true_utilities = list(preferences.mapping.values())

@@ -13,7 +13,7 @@ value-of-information based elicitation:
 
 | Family | Algorithm | Reference |
 |--------|-----------|-----------|
-| Pandora's Box | `PandoraElicitor`, `OptimalIncrementalElicitor`, ... | Baarslag & Gerding, *IJCAI 2015* |
+| Pandora's Box | `PandoraElicitor`, `OptimalIncrementalElicitor`, ... | [Baarslag & Gerding, *IJCAI 2015*](https://www.ijcai.org/Proceedings/15/Papers/008.pdf) |
 | Value of Information | `VOIElicitor` (OQA) | Baarslag & Kaisers, *AAMAS 2017* |
 | Fast VOI | `VOIFastElicitor` | Mohammad & Nakadai, *PRIMA 2018* |
 | Optimal VOI | `VOIOptimalElicitor` | Mohammad & Nakadai, *AAMAS 2019* |
@@ -36,10 +36,10 @@ from negmas_elicit import SAOElicitingMechanism
 
 # Generate a random negotiation scenario (utilities, opponent, priors, ...)
 config = SAOElicitingMechanism.generate_config(
-    cost=0.02,                    # what the user charges per query
+    cost=0.02,  # what the user charges per query
     n_outcomes=10,
     n_steps=100,
-    conflict=1.0,                 # how opposed the two ufuns are (0..1)
+    conflict=1.0,  # how opposed the two ufuns are (0..1)
     own_utility_uncertainty=0.2,  # how uncertain the elicitor's prior ufun is
     own_reserved_value=0.1,
     opponent_type="limited_outcomes",

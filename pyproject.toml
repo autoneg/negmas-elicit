@@ -80,4 +80,5 @@ addopts = "-v --tb=short"
 packages = ["src/negmas_elicit"]
 
 [tool.uv.sources]
-negmas = { path = "../negmas", editable = true }
+# Track the latest negmas from its GitHub main branch (used locally and in CI).
+negmas = { git = "https://github.com/yasserfarouk/negmas.git", branch = "main" }

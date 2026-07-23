@@ -120,6 +120,8 @@ The same helper is importable:
 ```python
 from negmas_elicit.cli import run_session
 
-result = run_session("voi", n_outcomes=10, cost=0.05, own_utility_uncertainty=0.3, seed=0)
+result = run_session(
+    "voi", n_outcomes=10, cost=0.05, own_utility_uncertainty=0.3, seed=0
+)
 print(result.elicitor_utility, result.n_queries)
 ```

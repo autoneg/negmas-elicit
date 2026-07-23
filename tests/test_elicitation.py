@@ -74,7 +74,13 @@ def true_utilities():
 def data_folder():
     import negmas
 
-    return os.path.join(os.path.dirname(negmas.__file__), "tests", "data")
+    folder = os.path.join(os.path.dirname(negmas.__file__), "tests", "data")
+    if not os.path.isdir(os.path.join(folder, "Laptop")):
+        pytest.skip(
+            "negmas test data (tests/data/Laptop) is not installed with the "
+            "negmas package; skipping genius-domain tests."
+        )
+    return folder
 
 
 def u0(neg: SAOMechanism, reserved_value=0.0):

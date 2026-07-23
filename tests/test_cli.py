@@ -59,10 +59,17 @@ def test_evaluate_command_writes_csv(tmp_path, capsys):
     assert "elicitor_utility" in printed
 
 
-@pytest.mark.parametrize("elicitor", ["full_knowledge", "pandora", "voi", "voi_optimal"])
+@pytest.mark.parametrize(
+    "elicitor", ["full_knowledge", "pandora", "voi", "voi_optimal"]
+)
 def test_run_session_returns_metrics(elicitor):
     result = run_session(
-        elicitor, n_outcomes=6, n_steps=20, cost=0.05, own_utility_uncertainty=0.3, seed=1
+        elicitor,
+        n_outcomes=6,
+        n_steps=20,
+        cost=0.05,
+        own_utility_uncertainty=0.3,
+        seed=1,
     )
     assert result.elicitor == elicitor
     assert result.elicitation_cost >= 0.0
