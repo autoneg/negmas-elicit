@@ -92,20 +92,20 @@ the elicitor's family: **Pandora's-box** (Baarslag & Gerding 2015, only
 elicitation-strategy variants), **VOI** (Value of Information), and `baseline`
 (the no-elicitation oracle).
 
-| method | variant | utility (mean±std) | welfare | elic. cost | n_queries | pareto dist | steps | time (s) |
-|----------|:--:|:--:|:--:|:--:|:--:|:--:|:--:|:--:|
-| baseline | **full_knowledge** | **0.790 ± 0.158** | 1.399 | 0.000 | 0.0 | 0.178 | 2.85 | 0.0002 |
-| VOI | voi_optimal | 0.776 ± 0.186 | 1.422 | 0.000 | 0.0 | 0.136 | 2.85 | 0.0003 |
-| VOI | voi | 0.738 ± 0.196 | 1.346 | 0.018 | 0.9 | 0.195 | 3.0 | 0.0162 |
-| Pandora's-box | pandora | 0.708 ± 0.162 | 1.322 | 0.044 | 2.2 | 0.252 | 2.8 | 0.0004 |
-| Practical | fast | 0.708 ± 0.162 | 1.322 | 0.044 | 2.2 | 0.252 | 2.8 | 0.0004 |
-| Practical | mean | 0.708 ± 0.162 | 1.322 | 0.044 | 2.2 | 0.252 | 2.8 | 0.0004 |
-| Practical | balanced | 0.708 ± 0.162 | 1.322 | 0.044 | 2.2 | 0.252 | 2.8 | 0.0004 |
-| Practical | optimistic | 0.708 ± 0.162 | 1.322 | 0.044 | 2.2 | 0.252 | 2.8 | 0.0004 |
-| Practical | pessimistic | 0.708 ± 0.162 | 1.322 | 0.044 | 2.2 | 0.252 | 2.8 | 0.0005 |
-| VOI | voi_fast | 0.675 ± 0.233 | 1.319 | 0.070 | 3.5 | 0.184 | 2.75 | 0.0154 |
-| Practical | random | 0.626 ± 0.205 | 1.202 | 0.081 | 4.1 | 0.270 | 3.0 | 0.0008 |
-| Practical | full | 0.463 ± 0.186 | 1.109 | 0.313 | 15.7 | 0.232 | 2.85 | 0.0027 |
+| method                  |      variant       | utility (mean±std) | welfare | elic. cost | n_queries | pareto dist | steps | time (s) |
+| ----------------------- | :----------------: | :----------------: | :-----: | :--------: | :-------: | :---------: | :---: | :------: |
+| baseline                | **full_knowledge** | **0.790 ± 0.158**  |  1.399  |   0.000    |    0.0    |    0.178    | 2.85  |  0.0002  |
+| VOI                     |    voi_optimal     |   0.776 ± 0.186    |  1.422  |   0.000    |    0.0    |    0.136    | 2.85  |  0.0003  |
+| VOI                     |        voi         |   0.738 ± 0.196    |  1.346  |   0.018    |    0.9    |    0.195    |  3.0  |  0.0162  |
+| Pandora's-box           |      original      |   0.708 ± 0.162    |  1.322  |   0.044    |    2.2    |    0.252    |  2.8  |  0.0004  |
+| Practical Pandora's-box |        fast        |   0.708 ± 0.162    |  1.322  |   0.044    |    2.2    |    0.252    |  2.8  |  0.0004  |
+| Practical Pandora's-box |        mean        |   0.708 ± 0.162    |  1.322  |   0.044    |    2.2    |    0.252    |  2.8  |  0.0004  |
+| Practical Pandora's-box |      balanced      |   0.708 ± 0.162    |  1.322  |   0.044    |    2.2    |    0.252    |  2.8  |  0.0004  |
+| Practical Pandora's-box |     optimistic     |   0.708 ± 0.162    |  1.322  |   0.044    |    2.2    |    0.252    |  2.8  |  0.0004  |
+| Practical Pandora's-box |    pessimistic     |   0.708 ± 0.162    |  1.322  |   0.044    |    2.2    |    0.252    |  2.8  |  0.0005  |
+| VOI                     |      voi_fast      |   0.675 ± 0.233    |  1.319  |   0.070    |    3.5    |    0.184    | 2.75  |  0.0154  |
+| Baseline                |       random       |   0.626 ± 0.205    |  1.202  |   0.081    |    4.1    |    0.270    |  3.0  |  0.0008  |
+| Baseline                |        full        |   0.463 ± 0.186    |  1.109  |   0.313    |   15.7    |    0.232    | 2.85  |  0.0027  |
 
 A few things to note:
 
@@ -135,19 +135,19 @@ not fixed — scenarios use random bilateral utilities; `voi` is omitted because
 its dynamic-query construction is impractically slow at this scale), 220
 sessions:
 
-| method | variant | utility (mean±std) | welfare | elic. cost | n_queries | pareto dist | steps | time (s) |
-|----------|:--:|:--:|:--:|:--:|:--:|:--:|:--:|:--:|
-| baseline | full_knowledge | 0.668 ± 0.153 | 1.306 | 0.000 | 0.0 | 0.314 | 2.90 | 0.0017 |
-| Pandora's-box | pandora | 0.681 ± 0.155 | 1.179 | 0.046 | 2.3 | 0.375 | 2.75 | 0.0032 |
-| Practical | fast | 0.681 ± 0.155 | 1.179 | 0.046 | 2.3 | 0.375 | 2.75 | 0.0035 |
-| Practical | mean | 0.681 ± 0.155 | 1.179 | 0.046 | 2.3 | 0.375 | 2.75 | 0.0043 |
-| Practical | balanced | 0.681 ± 0.155 | 1.179 | 0.046 | 2.3 | 0.375 | 2.75 | 0.0028 |
-| Practical | optimistic | 0.681 ± 0.155 | 1.179 | 0.046 | 2.3 | 0.375 | 2.75 | 0.0021 |
-| Practical | pessimistic | 0.681 ± 0.155 | 1.179 | 0.046 | 2.3 | 0.375 | 2.75 | 0.0022 |
-| VOI | voi_optimal | 0.680 ± 0.171 | 1.306 | 0.000 | 0.0 | 0.314 | 2.75 | 0.0025 |
-| Practical | random | 0.493 ± 0.211 | 1.086 | 0.231 | 11.6 | 0.379 | 2.35 | 0.0047 |
-| VOI | voi_fast | 0.190 ± 0.560 | 0.772 | 0.471 | 23.6 | 0.648 | 2.80 | 1.6239 |
-| Practical | full | 0.100 ± 0.000 | — | 3.017 | 150.9 | — | 2.00 | 0.0000 |
+| method                  |    variant     | utility (mean±std) | welfare | elic. cost | n_queries | pareto dist | steps | time (s) |
+| ----------------------- | :------------: | :----------------: | :-----: | :--------: | :-------: | :---------: | :---: | :------: |
+| baseline                | full_knowledge |   0.668 ± 0.153    |  1.306  |   0.000    |    0.0    |    0.314    | 2.90  |  0.0017  |
+| Pandora's-box           |    original    |   0.681 ± 0.155    |  1.179  |   0.046    |    2.3    |    0.375    | 2.75  |  0.0032  |
+| Practical Pandora's-box |      fast      |   0.681 ± 0.155    |  1.179  |   0.046    |    2.3    |    0.375    | 2.75  |  0.0035  |
+| Practical Pandora's-box |      mean      |   0.681 ± 0.155    |  1.179  |   0.046    |    2.3    |    0.375    | 2.75  |  0.0043  |
+| Practical Pandora's-box |    balanced    |   0.681 ± 0.155    |  1.179  |   0.046    |    2.3    |    0.375    | 2.75  |  0.0028  |
+| Practical Pandora's-box |   optimistic   |   0.681 ± 0.155    |  1.179  |   0.046    |    2.3    |    0.375    | 2.75  |  0.0021  |
+| Practical Pandora's-box |  pessimistic   |   0.681 ± 0.155    |  1.179  |   0.046    |    2.3    |    0.375    | 2.75  |  0.0022  |
+| VOI                     |  voi_optimal   |   0.680 ± 0.171    |  1.306  |   0.000    |    0.0    |    0.314    | 2.75  |  0.0025  |
+| Baseline                |     random     |   0.493 ± 0.211    |  1.086  |   0.231    |   11.6    |    0.379    | 2.35  |  0.0047  |
+| VOI                     |    voi_fast    |   0.190 ± 0.560    |  0.772  |   0.471    |   23.6    |    0.648    | 2.80  |  1.6239  |
+| Baseline                |      full      |   0.100 ± 0.000    |    —    |   3.017    |   150.9   |      —      | 2.00  |  0.0000  |
 
 At this scale the no-query baselines (`full_knowledge`, `voi_optimal`) and the
 Pandora's-box / practical family are statistically tied (~0.68; std ≈ 0.16).
@@ -165,14 +165,17 @@ Each elicitor is tagged with its method family and the paper that introduced it:
 - **VOI** — Value of Information: Baarslag & Kaisers, [AAMAS 2017](https://ifaamas.org/Proceedings/aamas2017/pdfs/p391.pdf) (OQA); Mohammad & Nakadai, [PRIMA 2018](https://link.springer.com/chapter/10.1007/978-3-030-03098-8_42) (FastVOI) and [AAMAS 2019](https://www.ifaamas.org/Proceedings/aamas2019/pdfs/p242.pdf) (Optimal VOI).
 
 ### Baseline Elicitors
+
 - `FullKnowledgeElicitor`: Assumes complete knowledge of user preferences (the
   no-elicitation upper bound used in the tournaments)
 
 ### Pandora's-box elicitors — Baarslag & Gerding (IJCAI 2015)
+
 - `PandoraElicitor` — **Pandora's-box**: standard Pandora's box approach
 - `OptimalIncrementalElicitor` — **Pandora's-box**: optimal incremental elicitation
 
 ### Practical elicitation strategies — Mohammad & Nakadai (IEEE SMC 2018)
+
 - `FastElicitor` — practical: fast approximation (no deep elicitation)
 - `MeanElicitor`, `BalancedElicitor`, `AspiringElicitor` — practical: different expectation strategies
 - `OptimisticElicitor`, `PessimisticElicitor` — practical: optimistic/pessimistic strategies
@@ -180,6 +183,7 @@ Each elicitor is tagged with its method family and the paper that introduced it:
 - `RandomElicitor` — practical baseline: random index instead of the optimal z-index
 
 ### VOI Elicitors — Value-of-Information methods
+
 - `VOIElicitor` — **VOI** (OQA; Baarslag & Kaisers, AAMAS 2017)
 - `VOIFastElicitor` — **VOI** (FastVOI; Mohammad & Nakadai, PRIMA 2018)
 - `VOIOptimalElicitor` — **VOI** (Optimal VOI; Mohammad & Nakadai, AAMAS 2019)
@@ -189,13 +193,13 @@ Each elicitor is tagged with its method family and the paper that introduced it:
 
 The elicitation algorithms implemented in this library are based on the following papers:
 
-| Algorithm | Paper |
-|-----------|-------|
-| Pandora's Box | Baarslag, T., & Gerding, E. H. (2015). [Optimal incremental preference elicitation during negotiation](https://www.ijcai.org/Proceedings/15/Papers/008.pdf). IJCAI'15. |
-| Practical elicitation strategies | Mohammad, Y., & Nakadai, S. (2018). [Utility elicitation during negotiation with practical elicitation strategies](https://doi.org/10.1109/SMC.2018.00525). IEEE SMC'18. |
-| VOI / OQA | Baarslag, T., & Kaisers, M. (2017). [The Value of Information in Automated Negotiation](https://ifaamas.org/Proceedings/aamas2017/pdfs/p391.pdf). AAMAS'17. |
-| FastVOI | Mohammad, Y., & Nakadai, S. (2018). [FastVOI: Efficient utility elicitation during negotiations](https://link.springer.com/chapter/10.1007/978-3-030-03098-8_42). PRIMA'18. |
-| Optimal VOI | Mohammad, Y., & Nakadai, S. (2019). [Optimal Value of Information Based Elicitation During Negotiation](https://www.ifaamas.org/Proceedings/aamas2019/pdfs/p242.pdf). AAMAS'19. |
+| Algorithm                        | Paper                                                                                                                                                                           |
+| -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Pandora's Box                    | Baarslag, T., & Gerding, E. H. (2015). [Optimal incremental preference elicitation during negotiation](https://www.ijcai.org/Proceedings/15/Papers/008.pdf). IJCAI'15.          |
+| Practical elicitation strategies | Mohammad, Y., & Nakadai, S. (2018). [Utility elicitation during negotiation with practical elicitation strategies](https://doi.org/10.1109/SMC.2018.00525). IEEE SMC'18.        |
+| VOI / OQA                        | Baarslag, T., & Kaisers, M. (2017). [The Value of Information in Automated Negotiation](https://ifaamas.org/Proceedings/aamas2017/pdfs/p391.pdf). AAMAS'17.                     |
+| FastVOI                          | Mohammad, Y., & Nakadai, S. (2018). [FastVOI: Efficient utility elicitation during negotiations](https://link.springer.com/chapter/10.1007/978-3-030-03098-8_42). PRIMA'18.     |
+| Optimal VOI                      | Mohammad, Y., & Nakadai, S. (2019). [Optimal Value of Information Based Elicitation During Negotiation](https://www.ifaamas.org/Proceedings/aamas2019/pdfs/p242.pdf). AAMAS'19. |
 
 ### BibTeX
 
