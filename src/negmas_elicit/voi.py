@@ -288,9 +288,11 @@ class BaseVOIElicitor(BaseElicitor):
         """Always can elicit"""
         return True
 
-    def best_offers(self, n: int) -> list[tuple[Outcome | None, float]]:
+    def best_offers(
+        self, n: int, state: MechanismState
+    ) -> list[tuple[Outcome | None, float]]:
         """Returns the best offer repeated n times"""
-        return [self.best_offer()] * n
+        return [self.best_offer(state)] * n
 
     def before_eliciting(self):
         """Called every round before trying to elicit. Does nothing"""
@@ -817,7 +819,7 @@ class VOIOptimalElicitor(BaseElicitor):
         *,
         base_negotiator: SAONegotiator = AspirationNegotiator(),
         adaptive_answer_probabilities=True,
-        expector_factory: Expector | Callable[[], Expector] = MeanExpector,
+        expector_factory: Expector | Callable[..., Expector] = MeanExpector,
         single_elicitation_per_round=False,
         continue_eliciting_past_reserved_val=False,
         epsilon=0.001,

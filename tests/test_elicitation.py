@@ -74,11 +74,16 @@ def true_utilities():
 def data_folder():
     import negmas
 
-    folder = os.path.join(os.path.dirname(negmas.__file__), "tests", "data")
+    # negmas does not ship its test data in the wheel; point NEGMAS_TEST_DATA at
+    # a negmas checkout's ``tests/data`` folder to run the genius-domain tests.
+    folder = os.environ.get(
+        "NEGMAS_TEST_DATA",
+        os.path.join(os.path.dirname(negmas.__file__), "tests", "data"),
+    )
     if not os.path.isdir(os.path.join(folder, "Laptop")):
         pytest.skip(
             "negmas test data (tests/data/Laptop) is not installed with the "
-            "negmas package; skipping genius-domain tests."
+            "negmas package (set NEGMAS_TEST_DATA); skipping genius-domain tests."
         )
     return folder
 

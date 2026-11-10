@@ -57,7 +57,7 @@ class BaseElicitor(SAONegotiator):
         | (
             Callable[[NegotiatorMechanismInterface], DiscreteAcceptanceModel]
         ) = lambda x: AdaptiveDiscreteAcceptanceModel.from_negotiation(nmi=x),
-        expector_factory: Expector | Callable[[], Expector] = MeanExpector,
+        expector_factory: Expector | Callable[..., Expector] = MeanExpector,
         single_elicitation_per_round=False,
         continue_eliciting_past_reserved_val=False,
         epsilon=0.001,
